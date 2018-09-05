@@ -24,12 +24,17 @@ OPTIONAL=(0 1 0)
 # BEGIN - Modify these values to support more stuff
 EXTRA_LINKS=("https://ftp.gnu.org/pub/gnu/nano/nano-2.9.8.tar.xz" "https://ftp.gnu.org/pub/gnu/less/less-530.tar.gz" "https://ftp.gnu.org/pub/gnu/make/make-4.2.1.tar.gz" "https://ftp.gnu.org/pub/gnu/grep/grep-3.1.tar.xz" "https://ftp.gnu.org/pub/gnu/gzip/gzip-1.9.tar.xz")
 EXTRAS_TO_BUILD=("nano" "less" "make" "grep" "gzip")
+
 EXTRA_LINK_TYPE=(0 1 1 0 0)
-MIGHT_NOT_WORK=(1 0 0 0 0)
-NOT_FULLY_FUNC=(0 1 0 0 0)
 # 0: tar.xz archive
 # 1: tar.gz archive
 # 2: Git (bootstrap) # NOT IMPLEMENTED
+
+STATE=(1 2 0 0 0)
+# 0: Runs fine
+# 1: Doesn't start/unusable
+# 2: Runs fine, some features not available
+
 EXTRAS=(0 0 0 0 0)
 # END
 EXTRAS_AVAILABLE=0
@@ -41,8 +46,8 @@ if [[ -z "$1" || "$1" == "--help" || "$1" == "-h" || "$1" == "--extra-utilities"
     n=0
     for util in "${EXTRAS_TO_BUILD[@]}"; do
       NS=""
-      if [[ ${MIGHT_NOT_WORK[${n}]} == 1 ]]; then NS=" (might not work)"
-      elif [[ ${NOT_FULLY_FUNC[${n}]} == 1 ]]; then NS=" (not fully functional)"; fi
+      if [[ ${STATE[${n}]} == 1 ]]; then NS=" (might not work)"
+      elif [[ ${STATE[${n}]} == 2 ]]; then NS=" (not fully functional)"; fi
       echo "- ${util}${NS}"
       ((n++))
     done
