@@ -22,12 +22,12 @@ COMMANDS_TO_CHECK=("cc -v" "make -v" "gcc -v" "xcode-select -p")
 # No jail_name given, print usage and exit
 if [[ -z "$1" ]]; then
   echo "Usage: mkjail.sh <jail_name>"
-  echo "This script creates a new macOS jail inside jail_name with GNU bash, coreutils and inetutils."
+  echo "This script creates a new macOS chroot jail inside jail_name with GNU utilities."
   exit 0
 fi
 
 if [[ "$EUID" == 0 ]]; then
-  echo "Do not run this tool as root, this will cause homebrew to not work."
+  echo "Do not run this tool as root, building as root can cause problems."
   exit 1
 fi
 
@@ -106,33 +106,27 @@ mv bash-4.4.18 bash_src
 mv inetutils-1.9.4 inetutils_src
 mv coreutils-8.30 coreutils_src
 
-# Build Bash
-echo "Building GNU Bash..."
-cd bash_build
-echo "\$ ../bash_src/configure --prefix=\"${CHROOT_PATH}\""
-../bash_src/configure --prefix="${CHROOT_PATH}"
-if [[ $? != 0 ]]; then error_exit "E: configure script for bash failed."; fi
-make -j4
-if [[ $? != 0 ]]; then error_exit "E: Unable to build bash from source."; fi
-echo "Bash has been built succesfully. Building GNU coreutils..."
+THINGS_TO_BUILD=("bash" "inetutils" "coreutils")
+OPTIONAL=(0 1 0)
 
-# Build coreutils
-cd ../coreutils_build
-../coreutils_src/configure --prefix="${CHROOT_PATH}"
-if [[ $? != 0 ]]; then error_exit "E: configure script for coreutils failed."; fi
-make -j4
-if [[ $? != 0 ]]; then error_exit "E: Unable to build coreutils from source."; fi
-echo "Coreutils has been built succesfully. Building GNU inetutils..."
-
-# Build inetutils
-cd ../inetutils_build
-sh -c "set -e;\
-echo $(pwd -P);\
-../inetutils_src/configure --prefix=\"${CHROOT_PATH}\";\
-make -j4;"
-if [[ $? != 0 ]]; then
-  echo "W: Unable to build inetutils from source. The script will continue anyway."
-fi
+j=0
+for thing in "${THINGS_TO_BUILD[@]}"
+do
+  echo "Building ${thing}..."
+  sh -c "set -e; \
+cd \"$(pwd -P)\"; \
+cd \"${thing}_build\"; \
+\"../${thing}_src/configure\" --prefix=\"${CHROOT_PATH}\"; \
+make;"
+  if [[ $? != 0 ]]; then
+    if [[ ${OPTIONAL[${j}]} == 1 ]]; then
+      echo "W: Couldn't build ${thing}. Continuing anyway."
+    else
+      error_exit "E: Unable to build ${thing}, but it is required. Exiting."
+    fi
+  fi
+  ((j++))
+done
 
 set -e
 pushd "${CHROOT_PATH}"
@@ -145,12 +139,26 @@ pushd "${CHROOT_PATH}"
   cp /usr/lib/dyld usr/lib/dyld
   echo "Installing bash and coreutils..."
 popd
-cd ../bash_build
-make install
-cd ../coreutils_build
-make install
-cd ../inetutils_build
-make install || true
+
+j=0
+for thing in "${THINGS_TO_BUILD[@]}"
+do
+  echo "Installing ${thing} inside the chroot jail..."
+  OLD_WD="$(pwd -P)"
+  cd "${TEMP_DIR}/${thing}_build" || true
+  if [[ OLD_WD != "$(pwd -P)" ]]; then
+    if [[ ${OPTIONAL[${j}]} == 1 ]]; then
+      make install || true
+    else
+      make install
+    fi
+  else
+    echo "W: Unable to change directory, please report this."
+    echo "I: Unable to access \${TEMP_DIR}/${thing}_build"
+  fi
+  ((j++))
+done
+
 echo "Copying libraries for bash and coreutils..."
 for curr_lib in "${DYLIBS_TO_COPY[@]}"
 do
