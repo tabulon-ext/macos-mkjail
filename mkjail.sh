@@ -16,6 +16,8 @@ error_exit () {
 
 # Everything inside /usr/lib/system will be copied as well.
 DYLIBS_TO_COPY=("libncurses.5.4.dylib" "libSystem.B.dylib" "libiconv.2.dylib" "libc++.1.dylib" "libobjc.A.dylib" "libc++abi.dylib" "closure/libclosured.dylib")
+SCRIPT_DEPENDS=("sudo" "tar" "curl")
+COMMANDS_TO_CHECK=("cc -v" "make -v" "gcc -v" "xcode-select -p")
 
 # No jail_name given, print usage and exit
 if [[ -z "$1" ]]; then
@@ -38,51 +40,47 @@ if [[ $? != 0 ]]; then
   if [[ $? != 0 ]]; then echo "Unable to get absolute path for $1"; exit 1; fi
 else echo "Refusing to turn an existing directory into a chroot jail."; exit 1; fi
 
+echo "Removing the newly created folder..."
 CHROOT_PATH="$(absolute_path "$1")"
+rm -rf ${CHROOT_PATH}
 
 # Check for dependencies
-printf "sudo... "
-type sudo &> /dev/null
-if [[ $? != 0 ]]; then
-  printf "not available\n"
-  echo "sudo command is required for this script."
-  exit 1
-fi
-printf "$(whereis sudo)\nhomebrew... "
-type brew &> /dev/null
-BREW_EXIT_CODE=$?
-type wget &> /dev/null
-WGET_EXIT_CODE=$?
-if [[ ${BREW_EXIT_CODE} != 0 ]]; then
-  printf "not available\n"
-  echo "E: Homebrew is not installed. Homebrew is required for this script."
-  exit ${BREW_EXIT_CODE}
-fi
-printf "ok\nwget... "
-if [[ ${WGET_EXIT_CODE} != 0 ]]; then
-  printf "not available\n"
-  echo "W: wget is not installed. Trying to install with homebrew..."
-  brew install --build-from-source wget
-  BREW_EXIT_CODE=$?
-  if [[ ${BREW_EXIT_CODE} != 0 ]]; then
-    echo "E: Could not install wget using Homebrew."
-    exit ${BREW_EXIT_CODE}
+for dependency in "${SCRIPT_DEPENDS[@]}"
+do
+  printf "${dependency}... "
+  type "${dependency}" &> /dev/null
+  if [[ $? != 0 ]]; then
+    printf "not available\n"
+    error_exit "E: ${dependency} is required for this script."
+  else printf "$(whereis ${dependency})\n"
   fi
-  echo "I: Confirming that wget was installed succesfully..."
-  type wget &> /dev/null
-  WGET_EXIT_CODE=$?
-  if [[ ${WGET_EXIT_CODE} != 0 ]]; then
-    echo "E: wget wasn't installed properly."
-    exit ${WGET_EXIT_CODE}
+done
+
+# Check for xcode command line tools by running a few commands
+echo "Checking for command line tools..."
+for cmd_to_check in "${COMMANDS_TO_CHECK[@]}"
+do
+  ${cmd_to_check} &> /dev/null
+  CMD_EXIT_CODE=$?
+  if [[ ${CMD_EXIT_CODE} != 0 ]]; then
+    # echo "DEBUG: Command: \"${cmd_to_check}\", exit code ${CMD_EXIT_CODE}"
+    echo "E: Xcode command line tools aren't installed. Run this script after installing them."
+    xcode-select --install
+    exit 1
   fi
-  echo "I: wget was installed succesfully."
-else printf "ok\n"; fi
+done
+
 
 # Make temporary directory for this script
-rm -rf .tmpmkjailsh10 &> /dev/null
-mkdir .tmpmkjailsh10
+rm -rf '.tmpmkjailsh10'
+mkdir '.tmpmkjailsh10'
 if [[ $? != 0 ]]; then error_exit "E: Unable to create temporary directory."; fi
-cd .tmpmkjailsh10
+TEMP_DIR="$(absolute_path ".tmpmkjailsh10")"
+cd '.tmpmkjailsh10'
+
+# Create the chroot folder
+# echo "DEBUG: \"${CHROOT_PATH}\""
+mkdir "${CHROOT_PATH}"
 
 # Download the source code tarballs for the following utilities:
 # GNU bash
@@ -90,9 +88,9 @@ cd .tmpmkjailsh10
 # GNU inetutils
 sh -c "set -e;\
 cd \"$(pwd -P)\";\
-wget --no-check-certificate -O coreutils.tar.xz \"https://ftp.gnu.org/pub/gnu/coreutils/coreutils-8.30.tar.xz\";\
-wget --no-check-certificate -O bash.tar.gz \"https://ftp.gnu.org/pub/gnu/bash/bash-4.4.18.tar.gz\";\
-wget --no-check-certificate -O inetutils.tar.xz \"https://ftp.gnu.org/pub/gnu/inetutils/inetutils-1.9.4.tar.xz\";"
+curl \"https://ftp.gnu.org/pub/gnu/coreutils/coreutils-8.30.tar.xz\" --output coreutils.tar.xz; \
+curl \"https://ftp.gnu.org/pub/gnu/bash/bash-4.4.18.tar.gz\" --output bash.tar.gz; \
+curl \"https://ftp.gnu.org/pub/gnu/inetutils/inetutils-1.9.4.tar.xz\" --output inetutils.tar.xz;"
 if [[ $? != 0 ]]; then error_exit "E: Unable to download the source code tarballs from GNU FTP."; fi
 
 # Extract the tarballs
@@ -164,4 +162,7 @@ sudo chown -R 0:0 "${CHROOT_PATH}"
 OWNER_UID="$EUID"
 OWNER_NAME="$(whoami)"
 sudo chown -R ${OWNER_UID}:20 "${CHROOT_PATH}/Users/${OWNER_NAME}"
+echo "Cleaning up..."
+cd "${CHROOT_PATH}"
+rm -vrf "${TEMP_DIR}" || true
 echo "The jail was created succesfully. To chroot into the created directory, run the following command:\n\$ sudo chroot -u $(whoami) \"${CHROOT_PATH}\" /bin/bash"
