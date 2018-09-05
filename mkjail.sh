@@ -15,24 +15,36 @@ error_exit () {
 }
 
 # Everything inside /usr/lib/system will be copied as well.
-DYLIBS_TO_COPY=("libncurses.5.4.dylib" "libSystem.B.dylib" "libiconv.2.dylib" "libc++.1.dylib" "libobjc.A.dylib" "libc++abi.dylib" "closure/libclosured.dylib" "libutil.dylib")
-SCRIPT_DEPENDS=("sudo" "tar" "curl")
+DYLIBS_TO_COPY=("libncurses.5.4.dylib" "libSystem.B.dylib" "libiconv.2.dylib" "libc++.1.dylib" "libobjc.A.dylib" "libc++abi.dylib" "closure/libclosured.dylib" "libutil.dylib" "libz.1.dylib")
+SCRIPT_DEPENDS=("sudo" "tar" "curl" "git")
 COMMANDS_TO_CHECK=("cc -v" "make -v" "gcc -v" "xcode-select -p")
 THING_LINKS=("https://ftp.gnu.org/pub/gnu/bash/bash-4.4.18.tar.gz" "https://ftp.gnu.org/pub/gnu/inetutils/inetutils-1.9.4.tar.xz" "https://ftp.gnu.org/pub/gnu/coreutils/coreutils-8.30.tar.xz")
 THINGS_TO_BUILD=("bash" "inetutils" "coreutils")
 OPTIONAL=(0 1 0)
-EXTRA_LINKS=("https://ftp.gnu.org/pub/gnu/nano/nano-2.9.8.tar.xz" "https://ftp.gnu.org/pub/gnu/less/less-530.tar.gz" "https://ftp.gnu.org/pub/gnu/make/make-4.2.1.tar.gz")
-EXTRAS_TO_BUILD=("nano" "less" "make")
-EXTRA_GZ=(0 1 1)
-EXTRAS=(0 0 0)
+# BEGIN - Modify these values to support more stuff
+EXTRA_LINKS=("https://ftp.gnu.org/pub/gnu/nano/nano-2.9.8.tar.xz" "https://ftp.gnu.org/pub/gnu/less/less-530.tar.gz" "https://ftp.gnu.org/pub/gnu/make/make-4.2.1.tar.gz" "https://ftp.gnu.org/pub/gnu/grep/grep-3.1.tar.xz" "https://ftp.gnu.org/pub/gnu/gzip/gzip-1.9.tar.xz")
+EXTRAS_TO_BUILD=("nano" "less" "make" "grep" "gzip")
+EXTRA_LINK_TYPE=(0 1 1 0 0)
+MIGHT_NOT_WORK=(1 0 0 0 0)
+NOT_FULLY_FUNC=(0 1 0 0 0)
+# 0: tar.xz archive
+# 1: tar.gz archive
+# 2: Git (bootstrap) # NOT IMPLEMENTED
+EXTRAS=(0 0 0 0 0 0)
+# END
 EXTRAS_AVAILABLE=0
 
 # No jail_name given, print usage and exit
 if [[ -z "$1" || "$1" == "--help" || "$1" == "-h" || "$1" == "--extra-utilities" ]]; then
   if [[ "$1" == "--extra-utilities" ]]; then
     echo "Supported utilities:"
+    n=0
     for util in "${EXTRAS_TO_BUILD[@]}"; do
-      echo "- ${util}"
+      NS=""
+      if [[ ${MIGHT_NOT_WORK[${n}]} == 1 ]]; then NS=" (might not work)"
+      elif [[ ${NOT_FULLY_FUNC[${n}]} == 1 ]]; then NS=" (not fully functional)"; fi
+      echo "- ${util}${NS}"
+      ((n++))
     done
     exit 0
   fi
@@ -40,6 +52,10 @@ if [[ -z "$1" || "$1" == "--help" || "$1" == "-h" || "$1" == "--extra-utilities"
   echo "This script creates a new macOS chroot jail inside jail_name with GNU utilities."
   echo "--extra-utilites: Extra utilities to build and install. Run this script only with this argument to list the supported utilities."
   exit 0
+fi
+
+if [[ (! -z "$2") && ("$2" != "--extra-utilities") ]]; then
+  error_exit "$0: Invalid argument: $2"
 fi
 
 if [[ "$EUID" == 0 ]]; then
@@ -73,17 +89,19 @@ do
 done
 
 # Check for xcode command line tools by running a few commands
-echo "Checking for command line tools..."
+printf "Checking for command line tools... "
 for cmd_to_check in "${COMMANDS_TO_CHECK[@]}"
 do
   ${cmd_to_check} &> /dev/null
   CMD_EXIT_CODE=$?
   if [[ ${CMD_EXIT_CODE} != 0 ]]; then
+    printf "not installed\n"
     echo "E: Xcode command line tools aren't installed. Run this script after installing them."
     xcode-select --install
     exit 1
   fi
 done
+printf "installed\n"
 
 # Check for extra utilities
 j=0
@@ -93,14 +111,19 @@ if [[ "$2" == "--extra-utilities" ]]; then
     if [[ ${param} == "--extra-utilities" && ${j} == 0 ]]; then j=1;
     elif [[ ${j} == 1 ]]; then
       k=0
+      m=0
       for extra_util in "${EXTRAS_TO_BUILD[@]}"
       do
         if [[ "${extra_util}" == "${param}" ]]; then
           EXTRAS[${k}]=1
           EXTRAS_AVAILABLE=1
+          m=1
         fi
         ((k++))
       done
+      if [[ $m == 0 ]]; then
+        error_exit "Unknown utility: ${param}"
+      fi
     fi
   done
 fi
@@ -137,11 +160,14 @@ if [[ ${EXTRAS_AVAILABLE} == 1 ]]; then
       echo "Downloading and compiling ${util_name}..."
       extension=".tar.xz"
       tar_arg="-xf"
-      if [[ ${EXTRA_GZ[${j}]} == 1 ]]; then
+      if [[ ${EXTRA_LINK_TYPE[${j}]} == 1 ]]; then
         extension=".tar.gz"
         tar_arg="-xzf"
       fi
-      sh -c "set -e; \
+      if [[ ${EXTRA_LINK_TYPE[${j}]} == 2 ]]; then
+        error_exit "E: Git functionality not implemented. Unable to compile ${util_name}.";
+      else
+        sh -c "set -e; \
 cd \"$(pwd -P)\"; \
 curl \"${EXTRA_LINKS[${j}]}\" --output \"${util_name}${extension}\"; \
 tar ${tar_arg} \"${util_name}${extension}\"; \
@@ -150,7 +176,8 @@ mkdir \"${util_name}_build\"; \
 cd \"${util_name}_build\"; \
 \"../${util_name}_src/configure\" --prefix=\"${CHROOT_PATH}\"; \
 make;"
-      if [[ $? != 0 ]]; then error_exit "E: Unable to compile ${util_name}."; fi
+        if [[ $? != 0 ]]; then error_exit "E: Unable to compile ${util_name}."; fi
+      fi
     fi
     ((j++))
   done
@@ -254,6 +281,7 @@ sudo chmod u+s "${CHROOT_PATH}/bin/ping" || true
 sudo cp "/etc/resolv.conf" "${CHROOT_PATH}/etc/resolv.conf" || true
 sudo cp "/etc/protocols" "${CHROOT_PATH}/etc/protocols" || true
 sudo cp "/etc/hosts" "${CHROOT_PATH}/etc/hosts" || true
+sudo cp "/var/run/resolv.conf" "${CHROOT_PATH}/var/run/resolv.conf" || true
 # END
 echo "Cleaning up..."
 cd "${CHROOT_PATH}"
