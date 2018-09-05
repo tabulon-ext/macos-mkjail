@@ -13,7 +13,5 @@ Script to automatically prepare a functional chroot jail with the following util
 | gzip          | Extra      |
 | tar           | Extra\*\*  |
 
-<small>
-\*: The script will continue even if this utility isn't compiled properly  
+\*: The script will continue even if this utility isn't compiled properly<br>  
 \*\*: Upcoming
-</small>
