@@ -15,7 +15,7 @@ error_exit () {
 }
 
 # Everything inside /usr/lib/system will be copied as well.
-DYLIBS_TO_COPY=("libncurses.5.4.dylib" "libSystem.B.dylib" "libiconv.2.dylib" "libc++.1.dylib" "libobjc.A.dylib" "libc++abi.dylib" "closure/libclosured.dylib")
+DYLIBS_TO_COPY=("libncurses.5.4.dylib" "libSystem.B.dylib" "libiconv.2.dylib" "libc++.1.dylib" "libobjc.A.dylib" "libc++abi.dylib" "closure/libclosured.dylib" "libutil.dylib")
 SCRIPT_DEPENDS=("sudo" "tar" "curl")
 COMMANDS_TO_CHECK=("cc -v" "make -v" "gcc -v" "xcode-select -p")
 THING_LINKS=("https://ftp.gnu.org/pub/gnu/bash/bash-4.4.18.tar.gz" "https://ftp.gnu.org/pub/gnu/inetutils/inetutils-1.9.4.tar.xz" "https://ftp.gnu.org/pub/gnu/coreutils/coreutils-8.30.tar.xz")
@@ -249,6 +249,12 @@ sudo chown -R 0:0 "${CHROOT_PATH}"
 OWNER_UID="$EUID"
 OWNER_NAME="$(whoami)"
 sudo chown -R ${OWNER_UID}:20 "${CHROOT_PATH}/Users/${OWNER_NAME}"
+# BEGIN - Attempt to fix internet connection inside chroot jail 
+sudo chmod u+s "${CHROOT_PATH}/bin/ping" || true
+sudo cp "/etc/resolv.conf" "${CHROOT_PATH}/etc/resolv.conf" || true
+sudo cp "/etc/protocols" "${CHROOT_PATH}/etc/protocols" || true
+sudo cp "/etc/hosts" "${CHROOT_PATH}/etc/hosts" || true
+# END
 echo "Cleaning up..."
 cd "${CHROOT_PATH}"
 rm -vrf "${TEMP_DIR}" || true
