@@ -18,11 +18,27 @@ error_exit () {
 DYLIBS_TO_COPY=("libncurses.5.4.dylib" "libSystem.B.dylib" "libiconv.2.dylib" "libc++.1.dylib" "libobjc.A.dylib" "libc++abi.dylib" "closure/libclosured.dylib")
 SCRIPT_DEPENDS=("sudo" "tar" "curl")
 COMMANDS_TO_CHECK=("cc -v" "make -v" "gcc -v" "xcode-select -p")
+THING_LINKS=("https://ftp.gnu.org/pub/gnu/bash/bash-4.4.18.tar.gz" "https://ftp.gnu.org/pub/gnu/inetutils/inetutils-1.9.4.tar.xz" "https://ftp.gnu.org/pub/gnu/coreutils/coreutils-8.30.tar.xz")
+THINGS_TO_BUILD=("bash" "inetutils" "coreutils")
+OPTIONAL=(0 1 0)
+EXTRA_LINKS=("https://ftp.gnu.org/pub/gnu/nano/nano-2.9.8.tar.xz" "https://ftp.gnu.org/pub/gnu/less/less-530.tar.gz" "https://ftp.gnu.org/pub/gnu/make/make-4.2.1.tar.gz")
+EXTRAS_TO_BUILD=("nano" "less" "make")
+EXTRA_GZ=(0 1 1)
+EXTRAS=(0 0 0)
+EXTRAS_AVAILABLE=0
 
 # No jail_name given, print usage and exit
-if [[ -z "$1" ]]; then
-  echo "Usage: mkjail.sh <jail_name>"
+if [[ -z "$1" || "$1" == "--help" || "$1" == "-h" || "$1" == "--extra-utilities" ]]; then
+  if [[ "$1" == "--extra-utilities" ]]; then
+    echo "Supported utilities:"
+    for util in "${EXTRAS_TO_BUILD[@]}"; do
+      echo "- ${util}"
+    done
+    exit 0
+  fi
+  echo "Usage: $0 <jail_name> [--extra-utilities [utility_1] [utility_2]...]"
   echo "This script creates a new macOS chroot jail inside jail_name with GNU utilities."
+  echo "--extra-utilites: Extra utilities to build and install. Run this script only with this argument to list the supported utilities."
   exit 0
 fi
 
@@ -63,13 +79,31 @@ do
   ${cmd_to_check} &> /dev/null
   CMD_EXIT_CODE=$?
   if [[ ${CMD_EXIT_CODE} != 0 ]]; then
-    # echo "DEBUG: Command: \"${cmd_to_check}\", exit code ${CMD_EXIT_CODE}"
     echo "E: Xcode command line tools aren't installed. Run this script after installing them."
     xcode-select --install
     exit 1
   fi
 done
 
+# Check for extra utilities
+j=0
+if [[ "$2" == "--extra-utilities" ]]; then
+  for param in "$@"
+  do
+    if [[ ${param} == "--extra-utilities" && ${j} == 0 ]]; then j=1;
+    elif [[ ${j} == 1 ]]; then
+      k=0
+      for extra_util in "${EXTRAS_TO_BUILD[@]}"
+      do
+        if [[ "${extra_util}" == "${param}" ]]; then
+          EXTRAS[${k}]=1
+          EXTRAS_AVAILABLE=1
+        fi
+        ((k++))
+      done
+    fi
+  done
+fi
 
 # Make temporary directory for this script
 rm -rf '.tmpmkjailsh10'
@@ -78,22 +112,52 @@ if [[ $? != 0 ]]; then error_exit "E: Unable to create temporary directory."; fi
 TEMP_DIR="$(absolute_path ".tmpmkjailsh10")"
 cd '.tmpmkjailsh10'
 
-# Create the chroot folder
-# echo "DEBUG: \"${CHROOT_PATH}\""
-mkdir "${CHROOT_PATH}"
-
 # Download the source code tarballs for the following utilities:
 # GNU bash
 # GNU coreutils
 # GNU inetutils
+cd "${TEMP_DIR}"
 sh -c "set -e;\
 cd \"$(pwd -P)\";\
-curl \"https://ftp.gnu.org/pub/gnu/coreutils/coreutils-8.30.tar.xz\" --output coreutils.tar.xz; \
-curl \"https://ftp.gnu.org/pub/gnu/bash/bash-4.4.18.tar.gz\" --output bash.tar.gz; \
-curl \"https://ftp.gnu.org/pub/gnu/inetutils/inetutils-1.9.4.tar.xz\" --output inetutils.tar.xz;"
+curl \"${THING_LINKS[2]}\" --output coreutils.tar.xz; \
+curl \"${THING_LINKS[0]}\" --output bash.tar.gz; \
+curl \"${THING_LINKS[1]}\" --output inetutils.tar.xz;"
 if [[ $? != 0 ]]; then error_exit "E: Unable to download the source code tarballs from GNU FTP."; fi
 
+# Create the chroot jail
+mkdir "${CHROOT_PATH}"
+
+# Download the extras and extract them
+cd "${TEMP_DIR}"
+if [[ ${EXTRAS_AVAILABLE} == 1 ]]; then
+  j=0
+  for util_name in "${EXTRAS_TO_BUILD[@]}"
+  do
+    if [[ ${EXTRAS[${j}]} == 1 ]]; then
+      echo "Downloading and compiling ${util_name}..."
+      extension=".tar.xz"
+      tar_arg="-xf"
+      if [[ ${EXTRA_GZ[${j}]} == 1 ]]; then
+        extension=".tar.gz"
+        tar_arg="-xzf"
+      fi
+      sh -c "set -e; \
+cd \"$(pwd -P)\"; \
+curl \"${EXTRA_LINKS[${j}]}\" --output \"${util_name}${extension}\"; \
+tar ${tar_arg} \"${util_name}${extension}\"; \
+mv \"${util_name}-\"* \"${util_name}_src\"; \
+mkdir \"${util_name}_build\"; \
+cd \"${util_name}_build\"; \
+\"../${util_name}_src/configure\" --prefix=\"${CHROOT_PATH}\"; \
+make;"
+      if [[ $? != 0 ]]; then error_exit "E: Unable to compile ${util_name}."; fi
+    fi
+    ((j++))
+  done
+fi
+
 # Extract the tarballs
+cd "${TEMP_DIR}"
 echo "Extracting the source code files..."
 mkdir bash_build coreutils_build inetutils_build
 sh -c "set -e;\
@@ -105,9 +169,6 @@ if [[ $? != 0 ]]; then error_exit "E: Unable to extract the tarballs."; fi
 mv bash-4.4.18 bash_src
 mv inetutils-1.9.4 inetutils_src
 mv coreutils-8.30 coreutils_src
-
-THINGS_TO_BUILD=("bash" "inetutils" "coreutils")
-OPTIONAL=(0 1 0)
 
 j=0
 for thing in "${THINGS_TO_BUILD[@]}"
@@ -137,7 +198,7 @@ pushd "${CHROOT_PATH}"
   mkdir "Users/$(whoami)"
   echo "Adding dyld..."
   cp /usr/lib/dyld usr/lib/dyld
-  echo "Installing bash and coreutils..."
+  echo "Installing utilities..."
 popd
 
 j=0
@@ -153,11 +214,29 @@ do
       make install
     fi
   else
-    echo "W: Unable to change directory, please report this."
+    echo "E: Unable to change directory, please report this."
     echo "I: Unable to access \${TEMP_DIR}/${thing}_build"
+    exit 1
   fi
   ((j++))
 done
+
+cd "${TEMP_DIR}"
+if [[ ${EXTRAS_AVAILABLE} == 1 ]]; then
+  j=0
+  for util_name in "${EXTRAS_TO_BUILD[@]}"
+  do
+    if [[ ${EXTRAS[${j}]} == 1 ]]; then
+      echo "Installing ${util_name} inside the chroot jail..."
+      sh -c "set -e; \
+cd \"$(pwd -P)\"; \
+cd \"${util_name}_build\"; \
+make install;"
+      if [[ $? != 0 ]]; then error_exit "E: Unable to install ${util_name}."; fi
+    fi
+    ((j++))
+  done
+fi
 
 echo "Copying libraries for bash and coreutils..."
 for curr_lib in "${DYLIBS_TO_COPY[@]}"
