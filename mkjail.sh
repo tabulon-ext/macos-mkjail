@@ -36,10 +36,11 @@ EXTRA_LINK_TYPE=(0 1 1 0 0 0 0)
 # 1: tar.gz archive
 # 2: Git (bootstrap.sh) # NOT IMPLEMENTED
 
-STATE=(0 0 0 0 0 0 0)
+STATE=(0 0 0 0 0 3 0)
 # 0: Runs fine
 # 1: Doesn't start/unusable
 # 2: Runs fine, some features not available
+# 3: Starts/runs, not fully tested
 
 EXTRAS=(0 0 0 0 0 0 0)
 # END #
@@ -65,7 +66,8 @@ elif [[ "$1" == "${EXTRA_UTIL_ARG}" ]]; then
   for util in "${EXTRAS_TO_BUILD[@]}"; do
     NS=""
     if [[ ${STATE[${n}]} == 1 ]]; then NS=" (does not work)"
-    elif [[ ${STATE[${n}]} == 2 ]]; then NS=" (not fully functional)"; fi
+    elif [[ ${STATE[${n}]} == 2 ]]; then NS=" (not fully functional)"
+    elif [[ ${STATE[${n}]} == 3 ]]; then NS=" (seems to work, not fully tested)"; fi
     echo "- ${util}${NS}"
     ((n++))
   done
@@ -323,7 +325,7 @@ do
   cd "${TEMP_DIR}/${thing}_build" || true
   if [[ OLD_WD != "$(pwd -P)" ]]; then
     if [[ ${OPTIONAL[${j}]} == 1 ]]; then
-      make install || true
+      make install || true
     else
       make install
     fi
