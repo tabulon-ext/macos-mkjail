@@ -30,7 +30,7 @@ NOT_FULLY_FUNC=(0 1 0 0 0)
 # 0: tar.xz archive
 # 1: tar.gz archive
 # 2: Git (bootstrap) # NOT IMPLEMENTED
-EXTRAS=(0 0 0 0 0 0)
+EXTRAS=(0 0 0 0 0)
 # END
 EXTRAS_AVAILABLE=0
 
