@@ -11,8 +11,8 @@ Script to automatically prepare a functional chroot jail with the following util
 | make          | Extra      |
 | nano          | Extra      |
 | gzip          | Extra      |
-| zsh           | Extra\*\*  |
-| tar           | Extra\*\*  |
+| zsh           | Extra      |
+| tar           | Extra      |
 
 \*: The script will continue even if this utility isn't compiled properly  
 \*\*: Upcoming
