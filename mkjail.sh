@@ -27,22 +27,22 @@ THINGS_TO_BUILD=("bash" "inetutils" "coreutils")
 OPTIONAL=(0 1 0)
 
 # BEGIN - Modify these values to support more stuff #
-EXTRA_LINKS=("https://ftp.gnu.org/pub/gnu/nano/nano-2.9.8.tar.xz" "https://ftp.gnu.org/pub/gnu/less/less-530.tar.gz" "https://ftp.gnu.org/pub/gnu/make/make-4.2.1.tar.gz" "https://ftp.gnu.org/pub/gnu/grep/grep-3.1.tar.xz" "https://ftp.gnu.org/pub/gnu/gzip/gzip-1.9.tar.xz" "https://netcologne.dl.sourceforge.net/project/zsh/zsh/5.5.1/zsh-5.5.1.tar.xz" "https://ftp.gnu.org/pub/gnu/tar/tar-1.30.tar.xz")
-EXTRAS_TO_BUILD=("nano" "less" "make" "grep" "gzip" "zsh" "tar")
+EXTRA_LINKS=("https://ftp.gnu.org/pub/gnu/nano/nano-2.9.8.tar.xz" "https://ftp.gnu.org/pub/gnu/less/less-530.tar.gz" "https://ftp.gnu.org/pub/gnu/make/make-4.2.1.tar.gz" "https://ftp.gnu.org/pub/gnu/grep/grep-3.1.tar.xz" "https://ftp.gnu.org/pub/gnu/gzip/gzip-1.9.tar.xz" "https://netcologne.dl.sourceforge.net/project/zsh/zsh/5.5.1/zsh-5.5.1.tar.xz" "https://ftp.gnu.org/pub/gnu/tar/tar-1.30.tar.xz" "https://ftp.gnu.org/pub/gnu/binutils/binutils-2.31.1.tar.xz")
+EXTRAS_TO_BUILD=("nano" "less" "make" "grep" "gzip" "zsh" "tar" "binutils")
 INSTALL_EXTRAS_TO="/usr"
 
-EXTRA_LINK_TYPE=(0 1 1 0 0 0 0)
+EXTRA_LINK_TYPE=(0 1 1 0 0 0 0 0)
 # 0: tar.xz archive
 # 1: tar.gz archive
 # 2: Git (bootstrap.sh) # NOT IMPLEMENTED
 
-STATE=(0 0 0 0 0 3 0)
+STATE=(0 0 0 0 0 3 0 0)
 # 0: Runs fine
 # 1: Doesn't start/unusable
 # 2: Runs fine, some features not available
 # 3: Starts/runs, not fully tested
 
-EXTRAS=(0 0 0 0 0 0 0)
+EXTRAS=(0 0 0 0 0 0 0 0)
 # END #
 
 EXTRAS_AVAILABLE=0
