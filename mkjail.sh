@@ -384,12 +384,15 @@ cp -r "/usr/share/terminfo" "${CHROOT_PATH}/usr/share/terminfo"
 cp /usr/lib/system/* "${CHROOT_PATH}/usr/lib/system/" || true
 
 echo "Setting permissions. You may be asked for your password."
-sudo chown -R 0:0 "${CHROOT_PATH}"
-sudo chown -R ${OWNER_UID}:20 "${CHROOT_PATH}/Users/${OWNER_NAME}"
-sudo chmod u+s "${CHROOT_PATH}/bin/ping" || true # ping fix
 
-# Fixes some utilities by hardlinking /bin/bash to /bin/sh
-sudo chroot -u 0 "${CHROOT_PATH}" "/bin/ln" "/bin/bash" "/bin/sh" || true
+# Start a new shell as root to avoid asking for password multiple times on some systems.
+sudo /usr/bin/env bash <<EOC
+chown -R 0:0 "${CHROOT_PATH}"
+chown -R ${OWNER_UID}:20 "${CHROOT_PATH}/Users/${OWNER_NAME}"
+chmod u+s "${CHROOT_PATH}/bin/ping" || true
+chroot -u 0 "${CHROOT_PATH}" "/bin/ln" -s "/bin/bash" "/bin/sh" || true
+chroot -u 0 "${CHROOT_PATH}" "/bin/ln" -s "/bin/env" "/usr/bin/env" || true
+EOC
 
 echo "Cleaning up..."
 cd "${CHROOT_PATH}"
