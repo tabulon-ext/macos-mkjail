@@ -88,9 +88,10 @@ if [[ "$1" == "${MANAGE_ARG}" && ! -z "$2" ]]; then
   while true; do
     read -p "mkjail> " answer
     answ_array=(${answer}) # TODO: Find a better way to split by space.
-    if [[ "${answer}" == "exit" ]]; then break
-    elif [[ "${answer}" == "help" || "${answer}" == "?" ]]; then
-      cat <<EOF
+    case "${answ_array[0]}" in
+      exit) break ;;
+      help)
+        cat <<EOF
 exit - Leave jail manager.
 fixperms - Sets the right permissions for the chroot jail.
 breakperms - TESTING PURPOSES ONLY.
@@ -98,43 +99,54 @@ pwd - Prints the currently selected jail.
 util - Utility manager command.
 clear - Clears the terminal.
 EOF
-    elif [[ "${answer}" == "fixperms" ]]; then
-      echo "Setting permissions. You might be asked for your password."
-      sh <<EOC
-      set -x
-      sudo chown -R 0:0 "${CHROOT_PATH}"
-      sudo chown -R ${OWNER_UID}:20 "${CHROOT_PATH}/Users/${OWNER_NAME}"
-      sudo chmod u+s "${CHROOT_PATH}/bin/ping"
-      exit &> /dev/null
+        ;;
+      fixperms)
+        echo "Setting permissions. You might be asked for your password."
+        sh <<EOC
+          set -x -e
+          sudo chown -R 0:0 "${CHROOT_PATH}"
+          sudo chown -R ${OWNER_UID}:20 "${CHROOT_PATH}/Users/${OWNER_NAME}"
+          sudo chmod u+s "${CHROOT_PATH}/bin/ping"
+          exit &> /dev/null
 EOC
-    elif [[ "${answer}" == "breakperms" ]]; then
-      echo "Breaking permissions. You might be asked for your password."
-      sh <<EOC
-      set -x
-      sudo chown -R 0:0 "${CHROOT_PATH}"
-      sudo chown -R ${OWNER_UID}:20 "${CHROOT_PATH}/"*
-      exit &> /dev/null
+        exitcode="$?"
+        if [[ "${exitcode}" != 0 ]]; then
+          echo "Unable to set permissions: ${exitcode}";
+        fi ;;
+      breakperms)
+        echo "Breaking permissions. You might be asked for your password."
+        sh <<EOC
+          set -x -e
+          sudo chown -R 0:0 "${CHROOT_PATH}"
+          sudo chown -R ${OWNER_UID}:20 "${CHROOT_PATH}/"*
+          exit &> /dev/null
 EOC
-    elif [[ "${answer}" == "pwd" ]]; then echo "${CHROOT_PATH}"
-    elif [[ "${answer}" == "clear" ]]; then clear
-    elif [[ "${answ_array[0]}" == "util" ]]; then
-      if [[ -z "${answ_array[1]}" ]]; then cat <<EOF
+        exitcode="$?"
+        if [[ "${exitcode}" != 0 ]]; then
+          echo "Unable to break permissions: ${exitcode}";
+        fi ;;
+      pwd) echo "${CHROOT_PATH}" ;;
+      clear) clear ;;
+      util)
+        if [[ -z "${answ_array[1]}" ]]; then cat <<EOF
 Usage: util <action>
 Extra utility manager actions:
 - list: Lists available extra utilities
 - install: Installs new utilities
 EOF
-      else
-        if [[ ${answ_array[1]} == "list" ]]; then
-          for util in "${EXTRAS_TO_BUILD[@]}"; do
-            echo "- ${util}"
-            ((n++))
-          done
-        else echo "util: ${answ_array[1]}: unknown action"; fi
-      fi
-    elif [[ ! -z "${answer// }" ]]; then
-      echo "$0: ${answer}: command not found"
-    fi
+        else
+          if [[ ${answ_array[1]} == "list" ]]; then
+            for util in "${EXTRAS_TO_BUILD[@]}"; do
+              echo "- ${util}"
+              ((n++))
+            done
+          else echo "util: ${answ_array[1]}: unknown action"; fi
+        fi ;;
+      *)
+        if [[ ! -z "${answer// }" ]]; then
+          echo "$0: ${answer}: command not found"
+        fi ;;
+    esac
   done
   exit 0
 elif [[ "$1" == "${MANAGE_ARG}" && -z "$2" ]]; then
@@ -368,7 +380,7 @@ done
 echo "Copying terminfo folder..."
 cp -r "/usr/share/terminfo" "${CHROOT_PATH}/usr/share/terminfo"
 
-# Copy every file (not folders) inside /usr/lib/system inside the chroot jail
+# Copy every file (not folders) inside /usr/lib/system to the chroot jail
 cp /usr/lib/system/* "${CHROOT_PATH}/usr/lib/system/" || true
 
 echo "Setting permissions. You may be asked for your password."
