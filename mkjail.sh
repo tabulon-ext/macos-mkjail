@@ -4,8 +4,7 @@ OWNER_UID="$EUID"
 OWNER_NAME="$(whoami)"
 
 absolute_path() {
-  pushd "$1" &> /dev/null
-  if [[ $? != 0 ]]; then return 1; fi
+  pushd "$1" &> /dev/null || return 1
   pwd -P
   PWD_EXIT_CODE=$?
   popd &> /dev/null
@@ -83,8 +82,7 @@ fi
 
 # Start the manager
 if [[ "$1" == "${MANAGE_ARG}" && ! -z "$2" ]]; then
-  CHROOT_PATH="$(absolute_path "$2")"
-  if [[ $? != 0 ]]; then error_exit "Unable to get absolute path for the chroot jail."; fi
+  CHROOT_PATH="$(absolute_path "$2")" || error_exit "Unable to get absolute path for the chroot jail."
   while true; do
     read -p "mkjail> " answer
     answ_array=(${answer}) # TODO: Find a better way to split by space.
@@ -150,18 +148,15 @@ EOF
   done
   exit 0
 elif [[ "$1" == "${MANAGE_ARG}" && -z "$2" ]]; then
-  echo "No jail_name given."
-  exit 1
+  error_exit "No jail_name given."
 fi
 
 absolute_path "$1"
 if [[ $? != 0 ]]; then
   echo "Creating a new folder at $1"
-  mkdir "$1" &> /dev/null
-  if [[ $? != 0 ]]; then echo "Unable to create $1"; exit 1; fi
-  absolute_path "$1"
-  if [[ $? != 0 ]]; then echo "Unable to get absolute path for $1"; exit 1; fi
-else echo "Refusing to turn an existing directory into a chroot jail."; exit 1; fi
+  mkdir "$1" &> /dev/null || error_exit "Unable to create $1"
+  absolute_path "$1" || error_exit "Unable to get absolute path for $1"
+else error_exit "Refusing to turn an existing directory into a chroot jail."; fi
 
 echo "Removing the newly created folder..."
 CHROOT_PATH="$(absolute_path "$1")"
@@ -229,8 +224,7 @@ fi
 
 # Make temporary directory for this script
 rm -rf '.tmpmkjailsh10'
-mkdir '.tmpmkjailsh10'
-if [[ $? != 0 ]]; then error_exit "E: Unable to create temporary directory."; fi
+mkdir '.tmpmkjailsh10' || error_exit "E: Unable to create temporary directory."
 TEMP_DIR="$(absolute_path ".tmpmkjailsh10")"
 cd '.tmpmkjailsh10'
 
@@ -243,8 +237,7 @@ sh -c "set -e;\
 cd \"$(pwd -P)\";\
 curl \"${THING_LINKS[2]}\" --output coreutils.tar.xz; \
 curl \"${THING_LINKS[0]}\" --output bash.tar.gz; \
-curl \"${THING_LINKS[1]}\" --output inetutils.tar.xz;"
-if [[ $? != 0 ]]; then error_exit "E: Unable to download the source code tarballs from GNU FTP."; fi
+curl \"${THING_LINKS[1]}\" --output inetutils.tar.xz;" || error_exit "E: Unable to download the source code tarballs from GNU FTP."
 
 # Create the chroot jail
 mkdir "${CHROOT_PATH}"
@@ -285,8 +278,7 @@ mv \"${util_name}-\"* \"${util_name}_src\"; \
 mkdir \"${util_name}_build\"; \
 cd \"${util_name}_build\"; \
 \"../${util_name}_src/configure\" --prefix=\"${CHROOT_PATH}${INSTALL_EXTRAS_TO}\"; \
-make;"
-        if [[ $? != 0 ]]; then error_exit "E: Unable to compile ${util_name}."; fi
+make;" || error_exit "E: Unable to compile ${util_name}."
       fi
     fi
     ((j++))
@@ -301,8 +293,7 @@ sh -c "set -e;\
 cd \"$(pwd -P)\";\
 tar -xzf bash.tar.gz;\
 tar -xf coreutils.tar.xz;\
-tar -xf inetutils.tar.xz;"
-if [[ $? != 0 ]]; then error_exit "E: Unable to extract the tarballs."; fi
+tar -xf inetutils.tar.xz;" || error_exit "E: Unable to extract the tarballs."
 mv bash-4.4.18 bash_src
 mv inetutils-1.9.4 inetutils_src
 mv coreutils-8.30 coreutils_src
@@ -359,8 +350,7 @@ if [[ ${EXTRAS_AVAILABLE} == 1 ]]; then
       sh -c "set -e; \
 cd \"$(pwd -P)\"; \
 cd \"${util_name}_build\"; \
-make install;"
-      if [[ $? != 0 ]]; then error_exit "E: Unable to install ${util_name}."; fi
+make install;" || error_exit "E: Unable to install ${util_name}."
     fi
     ((j++))
   done
