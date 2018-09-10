@@ -14,6 +14,7 @@ Script to automatically prepare a functional chroot jail with the following util
 | zsh           | Extra      |
 | tar           | Extra      |
 | binutils      | Extra      |
+| xz-utils      | Extra      |
 
 \*: The script will continue even if this utility isn't compiled properly  
 \*\*: Upcoming  
