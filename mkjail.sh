@@ -392,7 +392,7 @@ cp /usr/lib/system/* "${CHROOT_PATH}/usr/lib/system/" || true
 echo "Setting permissions. You may be asked for your password."
 
 # Start a new shell as root to avoid asking for password multiple times on some systems.
-sudo /usr/bin/env bash <<EOC
+sudo bash <<EOC
 chown -R 0:0 "${CHROOT_PATH}"
 chown -R ${OWNER_UID}:20 "${CHROOT_PATH}/Users/${OWNER_NAME}"
 chmod u+s "${CHROOT_PATH}/bin/ping" || true
