@@ -1,22 +1,22 @@
 # macOS mkjail
 Script to automatically prepare a functional chroot jail with the following utilities:
 
-| Utility       | Priority    | Type            |
-|:--------------|:-----------:|:---------------:|
-| GNU Bash      | Required    | Source code     |
-| GNU coreutils | Required    | Source code     |
-| GNU inetutils | Required\*  | Source code     |
-| grep          | Extra       | Source code     |
-| less          | Extra       | Source code     |
-| make          | Extra       | Source code     |
-| nano          | Extra       | Source code     |
-| gzip          | Extra       | Source code     |
-| zsh           | Extra       | Source code     |
-| tar           | Extra       | Source code     |
-| binutils      | Extra       | Source code     |
-| xz-utils      | Extra       | Source code     |
-| bzip2\*\*     | Extra       | Precompiled\*\* |
-| bashpm\*\*    | Recommended | Bash Script\*\* |
+| Utility | Priority | Type |
+|:----|:---:|:---:|
+| [bash](https://www.gnu.org/s/bash) | Required | Source code |
+| [coreutils](https://www.gnu.org/software/coreutils/coreutils.html) | Required | Source code |
+| [inetutils](https://www.gnu.org/software/inetutils/) | Required\* | Source code |
+| [grep](https://www.gnu.org/software/grep/) | Extra | Source code |
+| [less](https://www.gnu.org/software/less/) | Extra | Source code |
+| [make](https://www.gnu.org/s/make) | Extra | Source code |
+| [nano](https://www.nano-editor.org) | Extra | Source code |
+| [gzip](https://www.gnu.org/software/gzip/) | Extra | Source code |
+| [zsh](http://zsh.sourceforge.net) | Extra | Source code |
+| [tar](https://www.gnu.org/software/tar/) | Extra | Source code |
+| [binutils](https://www.gnu.org/software/binutils/) | Extra | Source code |
+| [xz-utils](https://tukaani.org/xz/) | Extra | Source code |
+| [bzip2](https://web.archive.org/web/20180801004107/http://www.bzip.org)\*\* | Extra | Precompiled\*\* |
+| [bashpm](https://github.com/pixelomer/bashpm)\*\* | Recommended | Bash Script\*\* |
 
 \*: The script will continue even if this utility isn't compiled properly  
 \*\*: Upcoming  
