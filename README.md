@@ -1,20 +1,22 @@
 # macOS mkjail
 Script to automatically prepare a functional chroot jail with the following utilities:
 
-| Utility       | Type       |
-|:-------------:|:----------:|
-| GNU Bash      | Required   |
-| GNU coreutils | Required   |
-| GNU inetutils | Required\* |
-| grep          | Extra      |
-| less          | Extra      |
-| make          | Extra      |
-| nano          | Extra      |
-| gzip          | Extra      |
-| zsh           | Extra      |
-| tar           | Extra      |
-| binutils      | Extra      |
-| xz-utils      | Extra      |
+| Utility       | Priority    | Type            |
+|:--------------|:-----------:|:---------------:|
+| GNU Bash      | Required    | Source code     |
+| GNU coreutils | Required    | Source code     |
+| GNU inetutils | Required\*  | Source code     |
+| grep          | Extra       | Source code     |
+| less          | Extra       | Source code     |
+| make          | Extra       | Source code     |
+| nano          | Extra       | Source code     |
+| gzip          | Extra       | Source code     |
+| zsh           | Extra       | Source code     |
+| tar           | Extra       | Source code     |
+| binutils      | Extra       | Source code     |
+| xz-utils      | Extra       | Source code     |
+| bzip2\*\*     | Extra       | Precompiled\*\* |
+| bashpm\*\*    | Recommended | Bash Script\*\* |
 
 \*: The script will continue even if this utility isn't compiled properly  
 \*\*: Upcoming  
