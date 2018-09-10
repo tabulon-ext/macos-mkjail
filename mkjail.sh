@@ -303,6 +303,8 @@ if [[ ${EXTRAS_AVAILABLE} == 1 ]]; then
       fi
       if [[ ${EXTRA_LINK_TYPE[${j}]} == 2 ]]; then
         error_exit "E: Git functionality not implemented. Unable to compile ${util_name}.";
+      elif [[ ${EXTRA_LINK_TYPE[${j}]} == 3 ]]; then
+        error_exit "E: Pre-compiled archives are not supported yet.";
       else
         sh -c "set -e; \
 cd \"$(pwd -P)\"; \
