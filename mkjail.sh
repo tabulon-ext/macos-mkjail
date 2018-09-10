@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+if [[ "${OSTYPE}" != darwin* ]]; then echo "This script is only for macOS."; exit 5; fi
+
 OWNER_UID="$EUID"
 OWNER_NAME="$(whoami)"
 
@@ -24,6 +26,7 @@ COMMANDS_TO_CHECK=("cc -v" "make -v" "gcc -v" "xcode-select -p")
 THING_LINKS=("https://ftp.gnu.org/pub/gnu/bash/bash-4.4.18.tar.gz" "https://ftp.gnu.org/pub/gnu/inetutils/inetutils-1.9.4.tar.xz" "https://ftp.gnu.org/pub/gnu/coreutils/coreutils-8.30.tar.xz")
 THINGS_TO_BUILD=("bash" "inetutils" "coreutils")
 OPTIONAL=(0 1 0)
+MAKE_ARGS=""
 
 # BEGIN - Modify these values to support more stuff #
 EXTRA_LINKS=("https://ftp.gnu.org/pub/gnu/nano/nano-2.9.8.tar.xz" "https://ftp.gnu.org/pub/gnu/less/less-530.tar.gz" "https://ftp.gnu.org/pub/gnu/make/make-4.2.1.tar.gz" "https://ftp.gnu.org/pub/gnu/grep/grep-3.1.tar.xz" "https://ftp.gnu.org/pub/gnu/gzip/gzip-1.9.tar.xz" "https://netcologne.dl.sourceforge.net/project/zsh/zsh/5.5.1/zsh-5.5.1.tar.xz" "https://ftp.gnu.org/pub/gnu/tar/tar-1.30.tar.xz" "https://ftp.gnu.org/pub/gnu/binutils/binutils-2.31.1.tar.xz")
@@ -48,15 +51,17 @@ EXTRAS_AVAILABLE=0
 
 MANAGE_ARG="-m"
 EXTRA_UTIL_ARG="-e"
+THREADING_ARG="-j"
 
 # No jail_name given, print usage and exit
 if [[ -z "$1" || "$1" == "--help" || "$1" == "-h" ]]; then
   cat <<EOF
-Usage: $0 [${MANAGE_ARG}] <jail_name> [${EXTRA_UTIL_ARG} [utility_1] [utility_2]...]
+Usage: $0 [${MANAGE_ARG}] <jail_name> [${EXTRA_UTIL_ARG} <util1> [util2]...] [${THREADING_ARG} <threads>]
 This script creates a new macOS chroot jail inside jail_name with GNU utilities.
   
 ${MANAGE_ARG}: Opens up a basic prompt to modify the chroot. Requires the chroot to be created with this utility.
 ${EXTRA_UTIL_ARG}: Extra utilities to build and install. Run this script only with this argument to list the supported utilities. Not required if you specify ${MANAGE_ARG}
+${THREADING_ARG}: Use this to specify how much threads to use during compilation.
 EOF
   exit 0
 elif [[ "$1" == "${EXTRA_UTIL_ARG}" ]]; then
@@ -191,6 +196,7 @@ printf "installed\n"
 
 # Check for extra utilities
 j=0
+ttb=0
 if [[ "$2" == "${EXTRA_UTIL_ARG}" ]]; then
   for param in "$@"
   do
@@ -212,14 +218,24 @@ if [[ "$2" == "${EXTRA_UTIL_ARG}" ]]; then
             ((v++))
           done
           break
-        fi
+        elif [[ "${param}" == "${THREADING_ARG}" ]]; then ttb=1; break; fi
         ((k++))
       done
-      if [[ ${EXTRAS_AVAILABLE} == 0 ]]; then
+      if [[ "${ttb}" == 1 ]]; then break;
+      elif [[ ${EXTRAS_AVAILABLE} == 0 ]]; then
         error_exit "Unknown utility: ${param}"
       fi
     fi
   done
+fi
+
+if [[ "${#@}" -gt 2 ]]; then
+  last_two_args=("${@: -2:1}" "${@: -1}")
+  # Check if threading argument is passed and if the next argument is an integer
+  if [[ "${last_two_args[0]}" == "-j" ]] && [ "${last_two_args[1]}" -eq "${last_two_args[1]}" ]; then
+    MAKE_ARGS="${MAKE_ARGS} -j${last_two_args[1]}"
+    echo "${last_two_args[1]} threads will be used."
+  fi
 fi
 
 # Make temporary directory for this script
@@ -278,7 +294,7 @@ mv \"${util_name}-\"* \"${util_name}_src\"; \
 mkdir \"${util_name}_build\"; \
 cd \"${util_name}_build\"; \
 \"../${util_name}_src/configure\" --prefix=\"${CHROOT_PATH}${INSTALL_EXTRAS_TO}\"; \
-make;" || error_exit "E: Unable to compile ${util_name}."
+make${MAKE_ARGS};" || error_exit "E: Unable to compile ${util_name}."
       fi
     fi
     ((j++))
@@ -306,7 +322,7 @@ do
 cd \"$(pwd -P)\"; \
 cd \"${thing}_build\"; \
 \"../${thing}_src/configure\" --prefix=\"${CHROOT_PATH}\"; \
-make;"
+make${MAKE_ARGS};"
   if [[ $? != 0 ]]; then
     if [[ ${OPTIONAL[${j}]} == 1 ]]; then
       echo "W: Couldn't build ${thing}. Continuing anyway."
