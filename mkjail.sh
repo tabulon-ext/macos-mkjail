@@ -178,6 +178,12 @@ do
   else printf "$(type -P ${dependency})\n"
   fi
 done
+printf "brew... "
+type "brew" &> /dev/null
+if [[ $? == 0 ]]; then
+  printf "$(type -P brew)\nW: Extra libraries that are installed with homebrew can cause the programs installed inside the jail to not start.\n"
+else printf "not availabe (this is good)\n"
+fi
 
 # Check for xcode command line tools by running a few commands
 printf "Checking for command line tools... "
