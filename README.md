@@ -17,7 +17,7 @@ Script to automatically prepare a functional chroot jail with the following util
 | [xz-utils](https://tukaani.org/xz/) | Extra | Self-compiled | none |
 | [bzip2](https://web.archive.org/web/20180801004107/http://www.bzip.org)\*\* | Extra | Pre-compiled\*\* | none |
 | [bashpm](https://github.com/pixelomer/bashpm)\*\* | Recommended | Bash Script\*\* | curl, xz-utils, tar, grep |
-| [curl](https://curl.haxx.se)\*\* | Recommended | Pre-compiled\*\* | none |
+| [curl (no SSL support)](https://curl.haxx.se)\*\* | Recommended | Pre-compiled\*\* | none |
 
 \*: The script will continue even if this utility isn't compiled properly  
 \*\*: Upcoming  
