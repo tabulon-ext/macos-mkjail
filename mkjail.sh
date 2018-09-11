@@ -418,6 +418,7 @@ chown -R ${OWNER_UID}:20 "${CHROOT_PATH}/Users/${OWNER_NAME}"
 chmod u+s "${CHROOT_PATH}/bin/ping" || true
 chroot -u 0 "${CHROOT_PATH}" "/bin/ln" -s "/bin/bash" "/bin/sh" || true
 chroot -u 0 "${CHROOT_PATH}" "/bin/ln" -s "/bin/env" "/usr/bin/env" || true
+chroot -u 0 "${CHROOT_PATH}" "/bin/ln" -s "/bin/install" "/usr/bin/install" || true
 EOC
 
 echo "Cleaning up..."
