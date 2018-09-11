@@ -1,22 +1,23 @@
 # macOS mkjail
 Script to automatically prepare a functional chroot jail with the following utilities:
 
-| Utility | Priority | Type |
-|:----|:---:|:---:|
-| [bash](https://www.gnu.org/s/bash) | Required | Source code |
-| [coreutils](https://www.gnu.org/software/coreutils/coreutils.html) | Required | Source code |
-| [inetutils](https://www.gnu.org/software/inetutils/) | Required\* | Source code |
-| [grep](https://www.gnu.org/software/grep/) | Extra | Source code |
-| [less](https://www.gnu.org/software/less/) | Extra | Source code |
-| [make](https://www.gnu.org/s/make) | Extra | Source code |
-| [nano](https://www.nano-editor.org) | Extra | Source code |
-| [gzip](https://www.gnu.org/software/gzip/) | Extra | Source code |
-| [zsh](http://zsh.sourceforge.net) | Extra | Source code |
-| [tar](https://www.gnu.org/software/tar/) | Extra | Source code |
-| [binutils](https://www.gnu.org/software/binutils/) | Extra | Source code |
-| [xz-utils](https://tukaani.org/xz/) | Extra | Source code |
-| [bzip2](https://web.archive.org/web/20180801004107/http://www.bzip.org)\*\* | Extra | Precompiled\*\* |
-| [bashpm](https://github.com/pixelomer/bashpm)\*\* | Recommended | Bash Script\*\* |
+| Utility | Priority | Type | Depends |
+|:----|:---:|:---:|:----|
+| [bash](https://www.gnu.org/s/bash) | Required | Self-compiled | none |
+| [coreutils](https://www.gnu.org/software/coreutils/coreutils.html) | Required | Self-compiled | none |
+| [inetutils](https://www.gnu.org/software/inetutils/) | Required\* | Self-compiled | none |
+| [grep](https://www.gnu.org/software/grep/) | Extra | Self-compiled | none |
+| [less](https://www.gnu.org/software/less/) | Extra | Self-compiled | none |
+| [make](https://www.gnu.org/s/make) | Extra | Self-compiled | none |
+| [nano](https://www.nano-editor.org) | Extra | Self-compiled | none |
+| [gzip](https://www.gnu.org/software/gzip/) | Extra | Self-compiled | none |
+| [zsh](http://zsh.sourceforge.net) | Extra | Self-compiled | none |
+| [tar](https://www.gnu.org/software/tar/) | Extra | Self-compiled | none |
+| [binutils](https://www.gnu.org/software/binutils/) | Extra | Self-compiled | none |
+| [xz-utils](https://tukaani.org/xz/) | Extra | Self-compiled | none |
+| [bzip2](https://web.archive.org/web/20180801004107/http://www.bzip.org)\*\* | Extra | Pre-compiled\*\* | none |
+| [bashpm](https://github.com/pixelomer/bashpm)\*\* | Recommended | Bash Script\*\* | curl, xz-utils, tar, grep |
+| [curl](https://curl.haxx.se)\*\* | Recommended | Pre-compiled\*\* | none |
 
 \*: The script will continue even if this utility isn't compiled properly  
 \*\*: Upcoming  
