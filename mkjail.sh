@@ -61,7 +61,10 @@ STATE=(0 0 0 0 0 3 0 0 0 0)
 # 3: Starts/runs, not fully tested
 # 4: Starts, some core features unavailable
 
-EXTRAS=(0 0 0 0 0 0 0 0 0 0)
+EXTRAS=(0 0 0 0 0 0 0 0 0 1)
+# 0: Extra (not installed by default)
+# 1: Recommended (installed by default)
+
 # END #
 
 EXTRAS_AVAILABLE=0
@@ -69,6 +72,7 @@ EXTRAS_AVAILABLE=0
 MANAGE_ARG="-m"
 EXTRA_UTIL_ARG="-e"
 THREADING_ARG="-j"
+BASIC_ARG="-b"
 
 # No jail_name given, print usage and exit
 if [[ -z "$1" || "$1" == "--help" || "$1" == "-h" ]]; then
@@ -79,6 +83,9 @@ This script creates a new macOS chroot jail inside jail_name with GNU utilities.
 ${MANAGE_ARG}: Opens up a basic prompt to modify the chroot. Requires the chroot to be created with this utility.
 ${EXTRA_UTIL_ARG}: Extra utilities to build and install. Run this script only with this argument to list the supported utilities. Not required if you specify ${MANAGE_ARG}
 ${THREADING_ARG}: Use this to specify how much threads to use during compilation.
+${BASIC_ARG}: Install only required utilities and don't install recommended utilities.
+
+Dont use ${EXTRA_UTIL_ARG} and ${BASIC_ARG} together, only the first one will take effect.
 EOF
   exit 0
 elif [[ "$1" == "${EXTRA_UTIL_ARG}" ]]; then
@@ -250,6 +257,12 @@ if [[ "$2" == "${EXTRA_UTIL_ARG}" ]]; then
         error_exit "Unknown utility: ${param}"
       fi
     fi
+  done
+elif [[ "$2" == "${BASIC_ARG}" ]]; then
+  for unusedvar in "${EXTRAS_TO_BUILD[@]}"
+  do
+    EXTRAS[${j}]=0
+    ((j++))
   done
 fi
 
