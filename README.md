@@ -15,12 +15,13 @@ Script to automatically prepare a functional chroot jail with the following util
 | [tar](https://www.gnu.org/software/tar/) | Extra | Self-compiled | none |
 | [binutils](https://www.gnu.org/software/binutils/) | Extra | Self-compiled | none |
 | [xz-utils](https://tukaani.org/xz/) | Extra | Self-compiled | none |
-| [bzip2](https://web.archive.org/web/20180801004107/http://www.bzip.org)\*\* | Extra | Pre-compiled\*\* | none |
+| [bzip2](https://web.archive.org/web/20180801004107/http://www.bzip.org)\*\* | Extra | Pre-compiled | none |
 | [bashpm](https://github.com/pixelomer/bashpm)\*\* | Recommended | Bash Script\*\* | curl, xz-utils, tar, grep |
-| [curl (no SSL support)](https://curl.haxx.se)\*\* | Recommended | Pre-compiled\*\* | none |
+| [curl (no SSL support)](https://curl.haxx.se) | Recommended | Pre-compiled | CoreFoundation\*\*\* |
 
 \*: The script will continue even if this utility isn't compiled properly  
 \*\*: Upcoming  
+\*\*\*: A preinstalled framework in macOS, copied by the script inside the jail.  
 
 **Note:** You don't need utility-archive to use this script. It is there just in case the official source goes down.
   
