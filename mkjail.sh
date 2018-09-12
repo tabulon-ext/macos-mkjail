@@ -305,7 +305,7 @@ pushd "${CHROOT_PATH}"
   # .${HOME} = ./Users/username
   mkdir ".${HOME}" || mkdir "Users/$(whoami)" || echo "W: Unable to create home folder."
   echo "Adding dyld..."
-  cp /usr/lib/dyld usr/lib/dyld
+  cp /usr/lib/dyld usr/lib/dyld || error_exit "E: Unable to copy dyld. dyld is required. Without it, it's not possible to run binaries in a macOS jail."
 popd
 
 # Download the extras and build them.
