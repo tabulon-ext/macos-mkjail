@@ -302,7 +302,8 @@ pushd "${CHROOT_PATH}"
   mkdir Applications bin dev etc sbin tmp Users usr var include lib share libexec System Library
   mkdir Applications/Utilities Users/Shared usr/bin usr/include usr/lib usr/libexec usr/local usr/sbin usr/share var/db var/folders var/root var/run var/tmp System/Library
   mkdir System/Library/Frameworks System/Library/PrivateFrameworks usr/lib/closure usr/lib/system usr/local/opt
-  mkdir "Users/$(whoami)"
+  # .${HOME} = ./Users/username
+  mkdir ".${HOME}" || mkdir "Users/$(whoami)" || echo "W: Unable to create home folder."
   echo "Adding dyld..."
   cp /usr/lib/dyld usr/lib/dyld
 popd
