@@ -46,7 +46,7 @@ EXTRA_LINKS=(
   "https://raw.githubusercontent.com/pixelomer/utility-archive/master/curl-nofw.tar"
   "https://raw.githubusercontent.com/pixelomer/utility-archive/master/bzip2.tar"
 )
-EXTRAS_TO_BUILD=("nano" "less" "make" "grep" "gzip" "zsh" "tar" "binutils" "xz-utils" "curl" "bzip2")
+EXTRAS_TO_BUILD=("nano" "less" "make" "grep" "gzip" "zsh" "tar" "binutils" "xz" "curl" "bzip2")
 INSTALL_EXTRAS_TO="/usr"
 
 EXTRA_LINK_TYPE=(0 1 1 0 0 0 0 0 0 3 3)
