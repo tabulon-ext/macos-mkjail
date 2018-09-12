@@ -15,7 +15,7 @@ Script to automatically prepare a functional chroot jail with the following util
 | [tar](https://www.gnu.org/software/tar/) | Extra | Self-compiled | none |
 | [binutils](https://www.gnu.org/software/binutils/) | Extra | Self-compiled | none |
 | [xz-utils](https://tukaani.org/xz/) | Extra | Self-compiled | none |
-| [bzip2](https://web.archive.org/web/20180801004107/http://www.bzip.org)\*\* | Extra | Pre-compiled | none |
+| [bzip2](https://web.archive.org/web/20180801004107/http://www.bzip.org) | Extra | Pre-compiled | none |
 | [bashpm](https://github.com/pixelomer/bashpm)\*\* | Recommended | Bash Script\*\* | curl, xz-utils, tar, grep |
 | [curl (no SSL support)](https://curl.haxx.se) | Recommended | Pre-compiled | CoreFoundation\*\*\* |
 

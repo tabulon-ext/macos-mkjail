@@ -44,24 +44,25 @@ EXTRA_LINKS=(
   "https://ftp.gnu.org/pub/gnu/binutils/binutils-2.31.1.tar.xz"
   "https://datapacket.dl.sourceforge.net/project/lzmautils/xz-5.2.4.tar.xz"
   "https://raw.githubusercontent.com/pixelomer/utility-archive/master/curl-nofw.tar"
+  "https://raw.githubusercontent.com/pixelomer/utility-archive/master/bzip2.tar"
 )
-EXTRAS_TO_BUILD=("nano" "less" "make" "grep" "gzip" "zsh" "tar" "binutils" "xz-utils" "curl")
+EXTRAS_TO_BUILD=("nano" "less" "make" "grep" "gzip" "zsh" "tar" "binutils" "xz-utils" "curl" "bzip2")
 INSTALL_EXTRAS_TO="/usr"
 
-EXTRA_LINK_TYPE=(0 1 1 0 0 0 0 0 0 3)
+EXTRA_LINK_TYPE=(0 1 1 0 0 0 0 0 0 3 3)
 # 0: tar.xz archive
 # 1: tar.gz archive
 # 2: Git (bootstrap.sh) # NOT IMPLEMENTED
 # 3: tar archive with precompiled binaries
 
-STATE=(0 0 0 0 0 3 0 0 0 0)
+STATE=(0 0 0 0 0 3 0 0 0 0 0)
 # 0: Runs fine
 # 1: Doesn't start/unusable
 # 2: Runs fine, some features not available
 # 3: Starts/runs, not fully tested
 # 4: Starts, some core features unavailable
 
-EXTRAS=(0 0 0 0 0 0 0 0 0 1)
+EXTRAS=(0 0 0 0 0 0 0 0 0 1 0)
 # 0: Extra (not installed by default)
 # 1: Recommended (installed by default)
 
@@ -77,7 +78,7 @@ BASIC_ARG="-b"
 # No jail_name given, print usage and exit
 if [[ -z "$1" || "$1" == "--help" || "$1" == "-h" ]]; then
   cat <<EOF
-Usage: $0 [${MANAGE_ARG}] <jail_name> [${EXTRA_UTIL_ARG} <util1> [util2]...] [${THREADING_ARG} <threads>]
+Usage: $0 [${MANAGE_ARG}] <jail_name> [[${EXTRA_UTIL_ARG} <util1> [util2]...] or [${BASIC_ARG}]] [${THREADING_ARG} <threads>]
 This script creates a new macOS chroot jail inside jail_name with GNU utilities.
   
 ${MANAGE_ARG}: Opens up a basic prompt to modify the chroot. Requires the chroot to be created with this utility.
