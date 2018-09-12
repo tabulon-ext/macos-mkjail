@@ -23,7 +23,11 @@ DYLIBS_TO_COPY=("libncurses.5.4.dylib" "libSystem.B.dylib" "libiconv.2.dylib" "l
 OTHER_FILES_TO_COPY=("/etc/protocols" "/etc/hosts")
 SCRIPT_DEPENDS=("sudo" "tar" "curl" "git")
 COMMANDS_TO_CHECK=("cc -v" "make -v" "gcc -v" "xcode-select -p")
-THING_LINKS=("https://ftp.gnu.org/pub/gnu/bash/bash-4.4.18.tar.gz" "https://ftp.gnu.org/pub/gnu/inetutils/inetutils-1.9.4.tar.xz" "https://ftp.gnu.org/pub/gnu/coreutils/coreutils-8.30.tar.xz")
+THING_LINKS=(
+  "https://ftp.gnu.org/pub/gnu/bash/bash-4.4.18.tar.gz"
+  "https://ftp.gnu.org/pub/gnu/inetutils/inetutils-1.9.4.tar.xz"
+  "https://ftp.gnu.org/pub/gnu/coreutils/coreutils-8.30.tar.xz"
+)
 THINGS_TO_BUILD=("bash" "inetutils" "coreutils")
 OPTIONAL=(0 1 0)
 MAKE_ARGS=""
@@ -39,9 +43,9 @@ EXTRA_LINKS=(
   "https://ftp.gnu.org/pub/gnu/tar/tar-1.30.tar.xz"
   "https://ftp.gnu.org/pub/gnu/binutils/binutils-2.31.1.tar.xz"
   "https://datapacket.dl.sourceforge.net/project/lzmautils/xz-5.2.4.tar.xz"
-  ""
+  "https://raw.githubusercontent.com/pixelomer/utility-archive/master/curl-nofw.tar"
 )
-EXTRAS_TO_BUILD=("nano" "less" "make" "grep" "gzip" "zsh" "tar" "binutils" "xz-utils" "bzip2")
+EXTRAS_TO_BUILD=("nano" "less" "make" "grep" "gzip" "zsh" "tar" "binutils" "xz-utils" "curl")
 INSTALL_EXTRAS_TO="/usr"
 
 EXTRA_LINK_TYPE=(0 1 1 0 0 0 0 0 0 3)
@@ -55,6 +59,7 @@ STATE=(0 0 0 0 0 3 0 0 0 0)
 # 1: Doesn't start/unusable
 # 2: Runs fine, some features not available
 # 3: Starts/runs, not fully tested
+# 4: Starts, some core features unavailable
 
 EXTRAS=(0 0 0 0 0 0 0 0 0 0)
 # END #
@@ -83,7 +88,8 @@ elif [[ "$1" == "${EXTRA_UTIL_ARG}" ]]; then
     NS=""
     if [[ ${STATE[${n}]} == 1 ]]; then NS=" (does not work)"
     elif [[ ${STATE[${n}]} == 2 ]]; then NS=" (not fully functional)"
-    elif [[ ${STATE[${n}]} == 3 ]]; then NS=" (seems to work, not fully tested)"; fi
+    elif [[ ${STATE[${n}]} == 3 ]]; then NS=" (seems to work, not fully tested)"
+    elif [[ ${STATE[${n}]} == 4 ]]; then NS=" (some core features unavailable)"; fi
     echo "- ${util}${NS}"
     ((n++))
   done
@@ -294,7 +300,7 @@ if [[ ${EXTRAS_AVAILABLE} == 1 ]]; then
   for util_name in "${EXTRAS_TO_BUILD[@]}"
   do
     if [[ ${EXTRAS[${j}]} == 1 ]]; then
-      echo "Downloading and compiling ${util_name}..."
+      echo "Downloading ${util_name}..."
       extension=".tar.xz"
       tar_arg="-xf"
       if [[ ${EXTRA_LINK_TYPE[${j}]} == 1 ]]; then
@@ -304,7 +310,9 @@ if [[ ${EXTRAS_AVAILABLE} == 1 ]]; then
       if [[ ${EXTRA_LINK_TYPE[${j}]} == 2 ]]; then
         error_exit "E: Git functionality not implemented. Unable to compile ${util_name}.";
       elif [[ ${EXTRA_LINK_TYPE[${j}]} == 3 ]]; then
-        error_exit "E: Pre-compiled archives are not supported yet.";
+        sh -c "set -e; \
+cd \"$(pwd -P)\"; \
+curl \"${EXTRA_LINKS[${j}]}\" --output \"${util_name}.tar\"; " || error_exit "E: Unable to download ${util_name}."
       else
         sh -c "set -e; \
 cd \"$(pwd -P)\"; \
@@ -381,12 +389,20 @@ if [[ ${EXTRAS_AVAILABLE} == 1 ]]; then
   j=0
   for util_name in "${EXTRAS_TO_BUILD[@]}"
   do
-    if [[ ${EXTRAS[${j}]} == 1 ]]; then
+    if [[ ${EXTRAS[${j}]} == 1 && ${EXTRA_LINK_TYPE[${j}]} != 3 ]]; then
       echo "Installing ${util_name} inside the chroot jail..."
       sh -c "set -e; \
 cd \"$(pwd -P)\"; \
 cd \"${util_name}_build\"; \
 make install;" || error_exit "E: Unable to install ${util_name}."
+    elif [[ ${EXTRAS[${j}]} == 1 && ${EXTRA_LINK_TYPE[${j}]} == 3 ]]; then
+      echo "Unpacking ${util_name} to chroot jail..."
+      sh -c "set -e; \
+cd \"$(pwd -P)\"; \
+tar -xvf \"${util_name}.tar\" -C \"${CHROOT_PATH}\"; " || error_exit "E: Unable to install ${util_name}."
+      if [[ ${j} == 9 ]]; then # Special case for cURL
+        cp -r "/System/Library/Frameworks/CoreFoundation.framework" "${CHROOT_PATH}/System/Library/Frameworks/CoreFoundation.framework"
+      fi
     fi
     ((j++))
   done
