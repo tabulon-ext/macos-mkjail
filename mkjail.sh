@@ -445,10 +445,11 @@ echo "Setting permissions. You may be asked for your password."
 # Start a new shell as root to avoid asking for password multiple times on some systems.
 sudo bash <<EOC
 chown -R 0:0 "${CHROOT_PATH}"
-chown -R ${OWNER_UID}:20 "${CHROOT_PATH}/Users/${OWNER_NAME}"
+chown -R ${OWNER_UID}:20 "${CHROOT_PATH}/Users/${OWNER_NAME}" || true
 chmod u+s "${CHROOT_PATH}/bin/ping" || true
-chroot -u 0 "${CHROOT_PATH}" "/bin/ln" -s "/bin/bash" "/bin/sh" || true
-chroot -u 0 "${CHROOT_PATH}" "/bin/ln" -s "/bin/env" "/usr/bin/env" || true
+chmod 7777 "${CHROOT_PATH}/tmp"
+chroot -u 0 "${CHROOT_PATH}" "/bin/ln" -s "/bin/bash" "/bin/sh"
+chroot -u 0 "${CHROOT_PATH}" "/bin/ln" -s "/bin/env" "/usr/bin/env"
 chroot -u 0 "${CHROOT_PATH}" "/bin/ln" -s "/bin/install" "/usr/bin/install" || true
 EOC
 
