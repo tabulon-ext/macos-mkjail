@@ -270,7 +270,7 @@ fi
 if [[ "${#@}" -gt 2 ]]; then
   last_two_args=("${@: -2:1}" "${@: -1}")
   # Check if threading argument is passed and if the next argument is an integer
-  if [[ "${last_two_args[0]}" == "-j" ]] && [ "${last_two_args[1]}" -eq "${last_two_args[1]}" ]; then
+  if [[ "${last_two_args[0]}" == "${THREADING_ARG}" ]] && [ "${last_two_args[1]}" -eq "${last_two_args[1]}" ]; then
     MAKE_ARGS="${MAKE_ARGS} -j${last_two_args[1]}"
     echo "${last_two_args[1]} threads will be used."
   fi
