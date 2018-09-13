@@ -13,6 +13,32 @@ absolute_path() {
   return ${PWD_EXIT_CODE}
 }
 
+fixperms() {
+  if [[ -z "$1" ]]; then return 1; fi
+  OWNER_UID="${EUID}"
+  OWNER_NAME="$(whoami)"
+  # Start a new shell as root to avoid asking for password multiple times on some systems.
+  sudo bash <<EOF
+    SPECIAL_DIRS=("/usr/share" "/usr/bin" "/usr/libexec" "/usr/include" "/usr/lib")
+    set -e
+    chown -R 0:0 "$1"
+    chown -R ${OWNER_UID}:20 "${1}/Users/${OWNER_NAME}" || true
+    chmod u+s "${1}/bin/ping" || true
+    chmod 1777 "${1}/tmp"
+    for DIR in "\${SPECIAL_DIRS[@]}"
+    do
+      chmod -R 1777 "${1}\${DIR}"
+      chmod -R 0755 "${1}\${DIR}/"* &> /dev/null || true
+    done
+    chmod -R 1777 "${1}/usr/bin/bashpm.d" &> /dev/null || true
+    chroot -u 0 "$1" "/bin/ln" -s "/bin/bash" "/bin/sh" &> /dev/null || true
+    chroot -u 0 "$1" "/bin/ln" -s "/bin/env" "/usr/bin/env" &> /dev/null || true
+    chroot -u 0 "$1" "/bin/ln" -s "/bin/install" "/usr/bin/install" &> /dev/null || true
+    echo "Permissions have been set."
+EOF
+  return $?
+}
+
 error_exit() {
   echo "$1"
   exit 1
@@ -123,21 +149,18 @@ if [[ "$1" == "${MANAGE_ARG}" && ! -z "$2" ]]; then
         cat <<EOF
 exit - Leave jail manager.
 fixperms - Sets the right permissions for the chroot jail.
-breakperms - TESTING PURPOSES ONLY.
+breakperms - Owns the contents of the chroot as the current user. ONLY FOR TESTING.
 pwd - Prints the currently selected jail.
-util - Utility manager command.
 clear - Clears the terminal.
 EOF
         ;;
       fixperms)
-        echo "Setting permissions. You might be asked for your password."
-        sh <<EOC
-          set -x -e
-          sudo chown -R 0:0 "${CHROOT_PATH}"
-          sudo chown -R ${OWNER_UID}:20 "${CHROOT_PATH}/Users/${OWNER_NAME}"
-          sudo chmod u+s "${CHROOT_PATH}/bin/ping"
-          exit &> /dev/null
-EOC
+        cat <<EOF
+Setting permissions. You might be asked for your password.
+WARNING: Setting permissions will cause packages that are installed by bashpm to become readonly. This means it will no longer be possible to reinstall those utilities without being root, but they will keep functioning.
+Press Control-C if you don't want to fix permissions.
+EOF
+        fixperms "${CHROOT_PATH}"
         exitcode="$?"
         if [[ "${exitcode}" != 0 ]]; then
           echo "Unable to set permissions: ${exitcode}";
@@ -156,21 +179,6 @@ EOC
         fi ;;
       pwd) echo "${CHROOT_PATH}" ;;
       clear) clear ;;
-      util)
-        if [[ -z "${answ_array[1]}" ]]; then cat <<EOF
-Usage: util <action>
-Extra utility manager actions:
-- list: Lists available extra utilities
-- install: Installs new utilities
-EOF
-        else
-          if [[ ${answ_array[1]} == "list" ]]; then
-            for util in "${EXTRAS_TO_BUILD[@]}"; do
-              echo "- ${util}"
-              ((n++))
-            done
-          else echo "util: ${answ_array[1]}: unknown action"; fi
-        fi ;;
       *)
         if [[ ! -z "${answer// }" ]]; then
           echo "$0: ${answer}: command not found"
@@ -441,17 +449,7 @@ cp -r "/usr/share/terminfo" "${CHROOT_PATH}/usr/share/terminfo"
 cp /usr/lib/system/* "${CHROOT_PATH}/usr/lib/system/" || true
 
 echo "Setting permissions. You may be asked for your password."
-
-# Start a new shell as root to avoid asking for password multiple times on some systems.
-sudo bash <<EOC
-chown -R 0:0 "${CHROOT_PATH}"
-chown -R ${OWNER_UID}:20 "${CHROOT_PATH}/Users/${OWNER_NAME}" || true
-chmod u+s "${CHROOT_PATH}/bin/ping" || true
-chmod 7777 "${CHROOT_PATH}/tmp"
-chroot -u 0 "${CHROOT_PATH}" "/bin/ln" -s "/bin/bash" "/bin/sh"
-chroot -u 0 "${CHROOT_PATH}" "/bin/ln" -s "/bin/env" "/usr/bin/env"
-chroot -u 0 "${CHROOT_PATH}" "/bin/ln" -s "/bin/install" "/usr/bin/install" || true
-EOC
+fixperms "${CHROOT_PATH}"
 
 echo "Cleaning up..."
 cd "${CHROOT_PATH}"
