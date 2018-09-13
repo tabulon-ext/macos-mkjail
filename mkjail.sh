@@ -28,7 +28,9 @@ fixperms() {
     for DIR in "\${SPECIAL_DIRS[@]}"
     do
       chmod -R 1777 "${1}\${DIR}"
-      chmod -R 0755 "${1}\${DIR}/"* &> /dev/null || true
+      if [[ "\${DIR}" != "/usr/share" ]]; then
+        chmod -R 0755 "${1}\${DIR}/"* &> /dev/null || true
+      fi
     done
     chmod -R 1777 "${1}/usr/bin/bashpm.d" &> /dev/null || true
     chroot -u 0 "$1" "/bin/ln" -s "/bin/bash" "/bin/sh" &> /dev/null || true
@@ -71,24 +73,26 @@ EXTRA_LINKS=(
   "https://datapacket.dl.sourceforge.net/project/lzmautils/xz-5.2.4.tar.xz"
   "https://raw.githubusercontent.com/pixelomer/utility-archive/master/curl-nofw.tar"
   "https://raw.githubusercontent.com/pixelomer/utility-archive/master/bzip2.tar"
+  "https://raw.githubusercontent.com/pixelomer/bashpm/80cf5edc1cb8eaa383a56a744106035656a8f30b/bashpm.sh"
 )
-EXTRAS_TO_BUILD=("nano" "less" "make" "grep" "gzip" "zsh" "tar" "binutils" "xz" "curl" "bzip2")
+EXTRAS_TO_BUILD=("nano" "less" "make" "grep" "gzip" "zsh" "tar" "binutils" "xz" "curl" "bzip2" "bashpm")
 INSTALL_EXTRAS_TO="/usr"
 
-EXTRA_LINK_TYPE=(0 1 1 0 0 0 0 0 0 3 3)
+EXTRA_LINK_TYPE=(0 1 1 0 0 0 0 0 0 3 3 4)
 # 0: tar.xz archive
 # 1: tar.gz archive
 # 2: Git (bootstrap.sh) # NOT IMPLEMENTED
 # 3: tar archive with precompiled binaries
+# 4: Special type for bashpm
 
-STATE=(0 0 0 0 0 3 0 0 0 0 0)
+STATE=(0 0 0 0 0 3 0 0 0 0 0 4)
 # 0: Runs fine
 # 1: Doesn't start/unusable
 # 2: Runs fine, some features not available
 # 3: Starts/runs, not fully tested
 # 4: Starts, some core features unavailable
 
-EXTRAS=(0 0 0 0 0 0 0 0 0 1 0)
+EXTRAS=(0 0 0 0 0 0 0 0 0 1 0 0)
 # 0: Extra (not installed by default)
 # 1: Recommended (installed by default)
 
@@ -248,6 +252,15 @@ if [[ "$2" == "${EXTRA_UTIL_ARG}" ]]; then
         if [[ "${extra_util}" == "${param}" ]]; then
           EXTRAS[${k}]=1
           EXTRAS_AVAILABLE=1
+          if [[ "${param}" == "${EXTRAS_TO_BUILD[11]}" ]]; then
+            echo "WARNING: BashPM is not really useful at the moment. You need to manually create files for every package, defeating half of the point of a package manager. You have 5 seconds to press Control-C if you want to cancel the jail creation."
+            sleep 5
+            echo "Dependencies will also be installed: xz, tar, grep, curl"
+            EXTRAS[3]=1 # grep
+            EXTRAS[6]=1 # tar
+            EXTRAS[8]=1 # xz
+            EXTRAS[9]=1 # curl
+          fi
         elif [[ "${param}" == "all" ]]; then
           echo "Selecting every extra utility"
           v=0
@@ -336,6 +349,13 @@ if [[ ${EXTRAS_AVAILABLE} == 1 ]]; then
         sh -c "set -e; \
 cd \"$(pwd -P)\"; \
 curl \"${EXTRA_LINKS[${j}]}\" --output \"${util_name}.tar\"; " || error_exit "E: Unable to download ${util_name}."
+      elif [[ ${EXTRA_LINK_TYPE[${j}]} == 4 ]]; then
+        if [[ "${util_name}" != "bashpm" ]]; then error_exit "E: Something is really wrong. You were about to install ${util_name} with the BashPM method."; fi
+        sh -c "set -e; \
+cd \"$(pwd -P)\"; \
+curl \"${EXTRA_LINKS[${j}]}\" --output \"bashpm.sh\"; \
+mv bashpm.sh bashpm; \
+chmod +x bashpm;" || error_exit "E: Unable to download BashPM."
       else
         sh -c "set -e; \
 cd \"$(pwd -P)\"; \
@@ -412,7 +432,7 @@ if [[ ${EXTRAS_AVAILABLE} == 1 ]]; then
   j=0
   for util_name in "${EXTRAS_TO_BUILD[@]}"
   do
-    if [[ ${EXTRAS[${j}]} == 1 && ${EXTRA_LINK_TYPE[${j}]} != 3 ]]; then
+    if [[ ${EXTRAS[${j}]} == 1 && ${EXTRA_LINK_TYPE[${j}]} < 2 ]]; then
       echo "Installing ${util_name} inside the chroot jail..."
       sh -c "set -e; \
 cd \"$(pwd -P)\"; \
@@ -426,6 +446,13 @@ tar -xvf \"${util_name}.tar\" -C \"${CHROOT_PATH}\"; " || error_exit "E: Unable 
       if [[ ${j} == 9 ]]; then # Special case for cURL
         cp -r "/System/Library/Frameworks/CoreFoundation.framework" "${CHROOT_PATH}/System/Library/Frameworks/CoreFoundation.framework"
       fi
+    elif [[ ${EXTRAS[${j}]} == 1 && ${EXTRA_LINK_TYPE[${j}]} == 4 ]]; then
+      echo "Installing BashPM and creating bashpm.d..."
+      sh -c "set -e; \
+cd \"$(pwd -P)\"; \
+cp bashpm \"${CHROOT_PATH}/usr/bin/bashpm\"; \
+mkdir \"${CHROOT_PATH}/usr/bin/bashpm.d\"; 
+mkdir \"${CHROOT_PATH}/usr/bin/bashpm.d/tmp\" \"${CHROOT_PATH}/usr/bin/bashpm.d/packages\"; " || error_exit "E: BashPM installation failed. I don't recommend retrying for now, it's not ready."
     fi
     ((j++))
   done
