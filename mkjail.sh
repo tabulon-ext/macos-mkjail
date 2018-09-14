@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-if [[ "${OSTYPE}" != darwin* ]]; then echo "This script is only for macOS."; exit 5; fi
+if [[ "${OSTYPE}" != darwin* ]]; then echo "This script is only for macOS."; exit 5;
+elif [[ "$(pwd -P)" == *" "* ]]; then echo "Working directory must not contain any spaces."; exit 54;
+fi
 
 OWNER_UID="$EUID"
 OWNER_NAME="$(whoami)"
