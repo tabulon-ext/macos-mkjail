@@ -24,7 +24,7 @@ fixperms() {
     SPECIAL_DIRS=("/usr/share" "/usr/bin" "/usr/libexec" "/usr/include" "/usr/lib")
     set -e
     chown -R 0:0 "$1"
-    chown -R ${OWNER_UID}:20 "${1}/Users/${OWNER_NAME}" || true
+    chown -R ${OWNER_UID}:20 "${1}${HOME}" || chown -R ${OWNER_UID}:20 "${1}/Users/${OWNER_NAME}" || echo "W: Unable to set permissions for home folder."
     chmod u+s "${1}/bin/ping" || true
     chmod 1777 "${1}/tmp"
     for DIR in "\${SPECIAL_DIRS[@]}"
@@ -76,6 +76,20 @@ EXTRA_LINKS=(
   "https://raw.githubusercontent.com/pixelomer/utility-archive/master/curl-nofw.tar"
   "https://raw.githubusercontent.com/pixelomer/utility-archive/master/bzip2.tar"
   "https://raw.githubusercontent.com/pixelomer/bashpm/80cf5edc1cb8eaa383a56a744106035656a8f30b/bashpm.sh"
+)
+CONFIGURE_FLAGS=(
+  " -disable-libmagic"
+  ""
+  ""
+  ""
+  ""
+  ""
+  ""
+  ""
+  ""
+  ""
+  ""
+  ""
 )
 EXTRAS_TO_BUILD=("nano" "less" "make" "grep" "gzip" "zsh" "tar" "binutils" "xz" "curl" "bzip2" "bashpm")
 INSTALL_EXTRAS_TO="/usr"
@@ -366,7 +380,7 @@ tar ${tar_arg} \"${util_name}${extension}\"; \
 mv \"${util_name}-\"* \"${util_name}_src\"; \
 mkdir \"${util_name}_build\"; \
 cd \"${util_name}_build\"; \
-\"../${util_name}_src/configure\" --prefix=\"${CHROOT_PATH}${INSTALL_EXTRAS_TO}\"; \
+\"../${util_name}_src/configure\" --prefix=\"${CHROOT_PATH}${INSTALL_EXTRAS_TO}\"${CONFIGURE_FLAGS[${j}]}; \
 make${MAKE_ARGS};" || error_exit "E: Unable to compile ${util_name}."
       fi
     fi
