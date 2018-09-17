@@ -80,11 +80,11 @@ EXTRA_LINKS=(
 )
 CONFIGURE_FLAGS=(
   " --disable-libmagic"
+  ""
+  ""
+  ""
+  ""
   " --disable-gdbm"
-  ""
-  ""
-  ""
-  ""
   ""
   ""
   ""
