@@ -79,8 +79,8 @@ EXTRA_LINKS=(
   "https://raw.githubusercontent.com/pixelomer/bashpm/80cf5edc1cb8eaa383a56a744106035656a8f30b/bashpm.sh"
 )
 CONFIGURE_FLAGS=(
-  " -disable-libmagic"
-  ""
+  " --disable-libmagic"
+  " --disable-gdbm"
   ""
   ""
   ""
