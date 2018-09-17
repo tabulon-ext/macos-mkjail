@@ -27,6 +27,7 @@ fixperms() {
     chown -R ${OWNER_UID}:20 "${1}${HOME}" || chown -R ${OWNER_UID}:20 "${1}/Users/${OWNER_NAME}" || echo "W: Unable to set permissions for home folder."
     chmod u+s "${1}/bin/ping" || true
     chmod 1777 "${1}/tmp"
+    chmod 666 "${1}/dev/"* || true
     for DIR in "\${SPECIAL_DIRS[@]}"
     do
       chmod -R 1777 "${1}\${DIR}"
@@ -483,6 +484,19 @@ for file in "${OTHER_FILES_TO_COPY[@]}"
 do
   cp "${file}" "${CHROOT_PATH}${file}" || true
 done
+
+echo "Trying to create special files..."
+sudo bash <<EOF
+MKNOD_NAME=("null" "zero")
+MKNOD_MAJOR=(3 3)
+MKNOD_MINOR=(2 3)
+p=0
+for filename in "\${MKNOD_NAME[@]}"
+do
+  mknod "${CHROOT_PATH}/dev/\${filename}" c "\${MKNOD_MAJOR[\${p}]}" "\${MKNOD_MINOR[\${p}]}"
+done
+true
+EOF
 
 # This folder is needed for the programs to get information about the terminal, and fixes a few programs.
 echo "Copying terminfo folder..."
