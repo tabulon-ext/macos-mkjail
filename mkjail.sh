@@ -485,11 +485,11 @@ do
   cp "${file}" "${CHROOT_PATH}${file}" || true
 done
 
-echo "Trying to create special files..."
+echo "Attempting to create character files. You might be asked for your password."
 sudo bash <<EOF
-MKNOD_NAME=("null" "zero")
-MKNOD_MAJOR=(3 3)
-MKNOD_MINOR=(2 3)
+MKNOD_NAME=("null" "zero" "random" "urandom")
+MKNOD_MAJOR=(3 3 14 14)
+MKNOD_MINOR=(2 3 0 1)
 p=0
 for filename in "\${MKNOD_NAME[@]}"
 do
@@ -505,7 +505,7 @@ cp -r "/usr/share/terminfo" "${CHROOT_PATH}/usr/share/terminfo"
 # Copy every file (not folders) inside /usr/lib/system to the chroot jail
 cp /usr/lib/system/* "${CHROOT_PATH}/usr/lib/system/" || true
 
-echo "Setting permissions. You may be asked for your password."
+echo "Setting permissions. You might be asked for your password."
 fixperms "${CHROOT_PATH}"
 
 echo "Cleaning up..."
