@@ -65,7 +65,7 @@ MAKE_ARGS=""
 
 # BEGIN - Modify these values to support more stuff #
 EXTRA_LINKS=(
-  "https://ftp.gnu.org/pub/gnu/nano/nano-2.9.8.tar.xz"
+  "https://ftp.gnu.org/pub/gnu/nano/nano-3.1.tar.xz"
   "https://ftp.gnu.org/pub/gnu/less/less-530.tar.gz"
   "https://ftp.gnu.org/pub/gnu/make/make-4.2.1.tar.gz"
   "https://ftp.gnu.org/pub/gnu/grep/grep-3.1.tar.xz"
@@ -79,7 +79,7 @@ EXTRA_LINKS=(
   "https://raw.githubusercontent.com/pixelomer/bashpm/80cf5edc1cb8eaa383a56a744106035656a8f30b/bashpm.sh"
 )
 CONFIGURE_FLAGS=(
-  " --disable-libmagic"
+  " --disable-libmagic --enable-color --enable-extra --enable-multibuffer --enable-nanorc"
   ""
   ""
   ""
@@ -98,7 +98,7 @@ INSTALL_EXTRAS_TO="/usr"
 EXTRA_LINK_TYPE=(0 1 1 0 0 0 0 0 0 3 3 4)
 # 0: tar.xz archive
 # 1: tar.gz archive
-# 2: Git (bootstrap.sh) # NOT IMPLEMENTED
+# 2: Placeholder for git
 # 3: tar archive with precompiled binaries
 # 4: Special type for bashpm
 
@@ -112,6 +112,9 @@ STATE=(0 0 0 0 0 3 0 0 0 0 0 4)
 EXTRAS=(0 0 0 0 0 0 0 0 0 1 0 0)
 # 0: Extra (not installed by default)
 # 1: Recommended (installed by default)
+
+# Binaries to copy from the host system
+EXTRA_BINARIES=("/usr/bin/clear")
 
 # END #
 
@@ -485,7 +488,13 @@ do
   cp "${file}" "${CHROOT_PATH}${file}" || true
 done
 
-echo "Attempting to create character files. You might be asked for your password."
+echo "Copying some useful utilities from the host system..."
+for ext_bin in "${EXTRA_BINARIES[@]}"
+do
+  cp -v "${ext_bin}" "${CHROOT_PATH}${ext_bin}" || true
+done
+
+printf "\nAttempting to create character files. You might be asked for your password.\n"
 sudo bash <<EOF
 MKNOD_NAME=("null" "zero" "random" "urandom")
 MKNOD_MAJOR=(3 3 14 14)
@@ -510,6 +519,6 @@ fixperms "${CHROOT_PATH}"
 
 echo "Cleaning up..."
 cd "${CHROOT_PATH}"
-rm -vrf "${TEMP_DIR}" || true
+rm -rf "${TEMP_DIR}" || echo "W: Unable to remove the temporary folder \"${TEMP_DIR}\"."
 echo "The jail was created succesfully. To chroot into the created directory, run the following command:"
 echo "\$ sudo chroot -u $(whoami) \"${CHROOT_PATH}\" /bin/bash"
