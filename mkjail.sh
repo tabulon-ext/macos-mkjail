@@ -124,19 +124,30 @@ MANAGE_ARG="-m"
 EXTRA_UTIL_ARG="-e"
 THREADING_ARG="-j"
 BASIC_ARG="-b"
+VERSION_ARG="--version"
+
+MKJAIL_VERSION="1.0"
+LAST_UPDATE_YEAR="2018"
+AUTHOR="PixelOmer"
 
 # No jail_name given, print usage and exit
 if [[ -z "$1" || "$1" == "--help" || "$1" == "-h" ]]; then
   cat <<EOF
 Usage: $0 [${MANAGE_ARG}] <jail_name> [[${EXTRA_UTIL_ARG} <util1> [util2]...] or [${BASIC_ARG}]] [${THREADING_ARG} <threads>]
 This script creates a new macOS chroot jail inside jail_name with GNU utilities.
-  
+
 ${MANAGE_ARG}: Opens up a basic prompt to modify the chroot. Requires the chroot to be created with this utility.
 ${EXTRA_UTIL_ARG}: Extra utilities to build and install. Run this script only with this argument to list the supported utilities. Not required if you specify ${MANAGE_ARG}
 ${THREADING_ARG}: Use this to specify how much threads to use during compilation.
 ${BASIC_ARG}: Install only required utilities and don't install recommended utilities.
 
 Dont use ${EXTRA_UTIL_ARG} and ${BASIC_ARG} together, only the first one will take effect.
+EOF
+  exit 0
+elif [[ "$1" == "${VERSION_ARG}" ]]; then
+  cat <<EOF
+macOS mkjail script version ${MKJAIL_VERSION}
+${LAST_UPDATE_YEAR} ${AUTHOR}
 EOF
   exit 0
 elif [[ "$1" == "${EXTRA_UTIL_ARG}" ]]; then
