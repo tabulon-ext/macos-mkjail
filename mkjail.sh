@@ -50,7 +50,20 @@ error_exit() {
 }
 
 # Everything inside /usr/lib/system will be copied as well.
-DYLIBS_TO_COPY=("libncurses.5.4.dylib" "libSystem.B.dylib" "libiconv.2.dylib" "libc++.1.dylib" "libobjc.A.dylib" "libc++abi.dylib" "closure/libclosured.dylib" "libutil.dylib" "libz.1.dylib" "libedit.3.dylib")
+DYLIBS_TO_COPY=(
+  "libncurses.5.4.dylib"
+  "libSystem.B.dylib"
+  "libiconv.2.dylib"
+  "libc++.1.dylib"
+  "libobjc.A.dylib"
+  "libc++abi.dylib"
+  "closure/libclosured.dylib"
+  "libutil.dylib"
+  "libz.1.dylib"
+  "libedit.3.dylib"
+  "libcharset.1.dylib"
+)
+DYLIB_NREQ=(0 0 0 0 0 0 1 0 0 0 1)
 OTHER_FILES_TO_COPY=("/etc/protocols" "/etc/hosts")
 SCRIPT_DEPENDS=("sudo" "tar" "curl" "git")
 COMMANDS_TO_CHECK=("cc -v" "make -v" "gcc -v" "xcode-select -p")
@@ -126,7 +139,9 @@ THREADING_ARG="-j"
 BASIC_ARG="-b"
 VERSION_ARG="--version"
 
-MKJAIL_VERSION="1.0"
+MKJAIL_PREV_VERSION="v1.0"
+MKJAIL_VERSION="v1.0.1"
+MKJAIL_CHANGES="- macOS Mojave (10.14) support"
 LAST_UPDATE_YEAR="2018"
 AUTHOR="PixelOmer"
 
@@ -146,8 +161,9 @@ EOF
   exit 0
 elif [[ "$1" == "${VERSION_ARG}" ]]; then
   cat <<EOF
-macOS mkjail script version ${MKJAIL_VERSION}
-${LAST_UPDATE_YEAR} ${AUTHOR}
+macOS mkjail script ${MKJAIL_VERSION}, ${LAST_UPDATE_YEAR} ${AUTHOR}
+Changes since ${MKJAIL_PREV_VERSION}:
+${MKJAIL_CHANGES}
 EOF
   exit 0
 elif [[ "$1" == "${EXTRA_UTIL_ARG}" ]]; then
@@ -490,9 +506,13 @@ mkdir \"${CHROOT_PATH}/usr/bin/bashpm.d/tmp\" \"${CHROOT_PATH}/usr/bin/bashpm.d/
 fi
 
 echo "Copying libraries..."
+q=0
 for curr_lib in "${DYLIBS_TO_COPY[@]}"
 do
-  cp "/usr/lib/${curr_lib}" "${CHROOT_PATH}/usr/lib/${curr_lib}"
+  cp "/usr/lib/${curr_lib}" "${CHROOT_PATH}/usr/lib/${curr_lib}" || {
+    [[ "${DYLIB_NREQ[${q}]}" == "1" ]] || echo "Unable to copy a required library."
+  }
+  ((q++))
 done
 for file in "${OTHER_FILES_TO_COPY[@]}"
 do
