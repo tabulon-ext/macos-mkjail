@@ -509,9 +509,7 @@ echo "Copying libraries..."
 q=0
 for curr_lib in "${DYLIBS_TO_COPY[@]}"
 do
-  cp "/usr/lib/${curr_lib}" "${CHROOT_PATH}/usr/lib/${curr_lib}" || {
-    [[ "${DYLIB_NREQ[${q}]}" == "1" ]] || echo "Unable to copy a required library."
-  }
+  cp "/usr/lib/${curr_lib}" "${CHROOT_PATH}/usr/lib/${curr_lib}" || [[ "${DYLIB_NREQ[${q}]}" == "1" ]]
   ((q++))
 done
 for file in "${OTHER_FILES_TO_COPY[@]}"
