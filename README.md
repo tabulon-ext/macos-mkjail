@@ -1,4 +1,5 @@
 # macOS mkjail
+### This project is no longer maintained.
 Script to automatically prepare a functional chroot jail with the following utilities:
 
 | Utility | Priority | Type | Depends |
@@ -16,14 +17,12 @@ Script to automatically prepare a functional chroot jail with the following util
 | [binutils](https://www.gnu.org/software/binutils/) | Extra | Self-compiled | none |
 | [xz-utils](https://tukaani.org/xz/) | Extra | Self-compiled | none |
 | [bzip2](https://web.archive.org/web/20180801004107/http://www.bzip.org) | Extra | Pre-compiled | none |
-| [bashpm](https://github.com/pixelomer/bashpm) | WIP | Bash Script | curl, xz-utils, tar, grep |
+| [bashpm](https://github.com/pixelomer/bashpm) | Not recommended, not maintained | Bash Script | curl, xz-utils, tar, grep |
 | [curl (no SSL support)](https://curl.haxx.se) | Recommended | Pre-compiled | CoreFoundation\*\* |
 
 \*: The script will continue even if this utility isn't compiled properly  
 \*\*: A preinstalled framework in macOS, copied by the script inside the jail.  
 
 **Tested on:** macOS High Sierra (10.13.6), macOS Mojave (10.14)  
-
-**Note:** You don't need utility-archive to use this script. It is there just in case the official source goes down.
   
 [Original gist](https://gist.github.com/pixelomer/f29eedb34368bec62df545c05db706b4)
